@@ -3,39 +3,47 @@ const express = require('express');
 const twilio = require('twilio');
 const sgMail = require('@sendgrid/mail');
 const path = require('path');
+
 const app = express();
-
 app.use(express.json());
-app.use(express.static('.')); // Sert index.html
+app.use(express.static('.')); // Sert index.html + assets
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
+// --- CONFIG ---
+const TWILIO_SID = process.env.TWILIO_SID;
+const TWILIO_TOKEN = process.env.TWILIO_TOKEN;
+const TWILIO_PHONE = process.env.TWILIO_PHONE;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const SENDGRID_FROM = process.env.SENDGRID_FROM || 'selimmeguennitani@gmail.com'; // Vérifié !
 
-// Route principale
+sgMail.setApiKey(SENDGRID_API_KEY);
+const client = twilio(TWILIO_SID, TWILIO_TOKEN);
+
+// --- ROUTE PRINCIPALE (OBLIGATOIRE) ---
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.post('/api/reserver', async (req, res) => {
-  const { n, t, e, d, a, date, p, prix } = req.body;
+// --- SMS ---
+app.post('/api/send-sms', async (req, res) => {
+  const { to, message } = req.body;
   try {
-    await client.messages.create({
-      body: `Réservation: ${d}→${a} ${date} ${prix}€`,
-      from: process.env.TWILIO_PHONE,
-      to: t
-    });
-    await sgMail.send({
-      to: e,
-      from: process.env.SENDGRID_FROM,
-      subject: 'Confirmation Chauffeur',
-      html: `<p>Réservation confirmée: ${d}→${a}, ${prix}€</p>`
-    });
-    res.sendStatus(200);
+    await client.messages.create({ body: message, from: TWILIO_PHONE, to });
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.sendStatus(500);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- EMAIL ---
+app.post('/api/send-email', async (req, res) => {
+  const { to, subject, html } = req.body;
+  try {
+    await sgMail.send({ to, from: SENDGRID_FROM, subject, html });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Serveur sur port ${PORT}`));
