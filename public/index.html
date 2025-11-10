@@ -58,10 +58,32 @@ button:hover { background:#0056b3; }
 
 <script>
 // === Helper debug pour mobile ===
-function showDebug(msg){
-  document.getElementById("debug").textContent = msg;
-}
+function showDebug(msg) {
+  let debugBox = document.getElementById("debugBox");
+  if (!debugBox) {
+    debugBox = document.createElement("div");
+    debugBox.id = "debugBox";
+    debugBox.style.position = "fixed";
+    debugBox.style.bottom = "0";
+    debugBox.style.left = "0";
+    debugBox.style.width = "100%";
+    debugBox.style.maxHeight = "40vh";
+    debugBox.style.overflowY = "auto";
+    debugBox.style.background = "rgba(0,0,0,0.8)";
+    debugBox.style.color = "#0f0";
+    debugBox.style.fontSize = "12px";
+    debugBox.style.padding = "8px";
+    debugBox.style.zIndex = "9999";
+    debugBox.style.fontFamily = "monospace";
+    document.body.appendChild(debugBox);
+  }
 
+  const time = new Date().toLocaleTimeString();
+  const line = document.createElement("div");
+  line.textContent = `[${time}] ${msg}`;
+  debugBox.appendChild(line);
+  debugBox.scrollTop = debugBox.scrollHeight;
+}
 // === Autocomplete Nominatim ===
 async function autocomplete(inputId){
   const input = document.getElementById(inputId);
