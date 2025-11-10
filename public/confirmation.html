@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirmation de course</title>
+<title>Confirmation Chauffeur Privé VTC Marseille, Aix-en-Provence</title>
+<meta name="description" content="Confirmez votre chauffeur privé, chauffeur ou VTC à Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille(s), Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane. Déplacement rapide vers l'aéroport Marseille MRS, gare ou ville.">
+<meta name="keywords" content="chauffeur privé, chauffeur, VTC, taxi pas cher, Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille, Aiguilles, Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane, aéroport Marseille, MRS, transfert gare, réservation taxi, VTC Marseille, course rapide, réservation chauffeur, prix course, transport privé, service VTC, taxi Aix, taxi Cassis, taxi Ciotat, taxi Marignane, taxi Martigues, transfert aéroport MRS, réservation en ligne">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://ton-site-vercel.app/confirmation.html" />
 <style>
 body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; color:#333; }
 .container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
@@ -51,7 +55,6 @@ const course = JSON.parse(sessionStorage.getItem("course") || "{}");
 if(!course.depart){
   document.body.innerHTML = "<p>⚠️ Aucune donnée trouvée. Retournez à l'accueil.</p>";
 } else {
-  // Affiche la récap avec majoration et heure
   const heureCourse = course.heure || "Maintenant";
   document.getElementById("recap").innerHTML = `
     <strong>Départ :</strong> ${course.depart}<br>
@@ -74,7 +77,6 @@ document.getElementById("formConfirm").addEventListener("submit", async e=>{
 
   if(!nom || !prenom || !tel || !email) return alert("Tous les champs sont obligatoires.");
 
-  // Nettoyage numéro pour Twilio
   tel = tel.replace(/[^\d\+]/g,"");
 
   const messageTxt = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} (≈ ${course.distanceKm.toFixed(1)} km) pour ${course.prix}€ ${course.majoration !== 'Aucune' ? '('+course.majoration+')' : ''} est confirmée. Heure prévue : ${course.heure || 'Maintenant'}.`;
