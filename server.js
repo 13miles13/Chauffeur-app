@@ -42,7 +42,7 @@ app.get("/", (req, res) => {
 app.post("/api/distance", async (req, res) => {
   try {
     const { coords } = req.body;
-    if(!coords || coords.length !== 2) throw new Error("Coordonnées invalides");
+    if(!coords || coords.length !== 2) return res.status(400).json({ error: "Coordonnées invalides" });
 
     const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
       method: "POST",
@@ -53,17 +53,25 @@ app.post("/api/distance", async (req, res) => {
       body: JSON.stringify({ coordinates: coords })
     });
 
-    const data = await response.json();
+    const text = await response.text();
+
+    // Tenter de parser JSON
+    let data;
+    try { data = JSON.parse(text); } 
+    catch(err){ 
+      console.error("ORS ne renvoie pas du JSON :", text); 
+      return res.status(500).json({ error: "ORS renvoie une réponse non JSON", raw: text }); 
+    }
 
     if(data.error || !data.routes) {
       console.error("Erreur ORS :", data);
-      return res.status(500).json({ error: "Erreur lors de la récupération de la distance ORS." });
+      return res.status(500).json({ error: data.error || "Erreur ORS", raw: text });
     }
 
     res.json(data);
   } catch(err) {
     console.error("Erreur distance:", err);
-    res.status(500).json({ error: err.message || "Erreur serveur" });
+    res.status(500).json({ error: err.message });
   }
 });
 
