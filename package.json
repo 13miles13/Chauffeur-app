@@ -1,28 +1,20 @@
 {
   "name": "chauffeur-app",
   "version": "1.0.0",
-  "description": "Application de réservation de chauffeur avec calcul automatique, SMS et email.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": ["chauffeur", "réservation", "express", "twilio", "sendgrid"],
-  "author": "Selim Meguennitani",
-  "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
     "twilio": "^4.0.0",
     "@sendgrid/mail": "^7.7.0",
     "dotenv": "^16.0.3",
     "helmet": "^7.1.0",
-    "cors": "^2.8.5",
-    "node-fetch": "^3.3.2"
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
