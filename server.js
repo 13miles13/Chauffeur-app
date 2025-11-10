@@ -1,105 +1,100 @@
-require('dotenv').config();
-const express = require('express');
-const twilio = require('twilio');
-const sgMail = require('@sendgrid/mail');
-const path = require('path');
+import express from "express";
+import dotenv from "dotenv";
+import sgMail from "@sendgrid/mail";
+import twilio from "twilio";
+import bodyParser from "body-parser";
+import cors from "cors";
 
+dotenv.config();
 const app = express();
-app.use(express.json());
-app.use(express.static('public'));
+app.use(cors());
+app.use(bodyParser.json());
 
-// --- CONFIG ---
-const TWILIO_SID = process.env.TWILIO_SID;
-const TWILIO_TOKEN = process.env.TWILIO_TOKEN;
-const TWILIO_PHONE = process.env.TWILIO_PHONE;
+// --- CONFIG SENDGRID ---
+if (!process.env.SENDGRID_API_KEY) {
+  console.error("❌ Erreur : SENDGRID_API_KEY manquant !");
+}
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const SENDGRID_FROM = process.env.SENDGRID_FROM || 'noreply@chauffeur-prive.fr';
+// --- CONFIG TWILIO ---
+const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
 
-const CHAUFFEUR_PHONE = process.env.CHAUFFEUR_PHONE;
-const CHAUFFEUR_EMAIL = process.env.CHAUFFEUR_EMAIL;
+let twilioClient = null;
+if (TWILIO_SID && TWILIO_TOKEN) {
+  twilioClient = twilio(TWILIO_SID, TWILIO_TOKEN);
+} else {
+  console.warn("⚠️ Twilio désactivé (variables manquantes)");
+}
 
-sgMail.setApiKey(SENDGRID_API_KEY);
-const client = twilio(TWILIO_SID, TWILIO_TOKEN);
+// === ROUTE TEST ===
+app.get("/api/test", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.json({ status: "ok", message: "API fonctionnelle ✅" });
+});
 
-// --- ROUTES ---
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public/index.html')));
-app.get('/confirmation.html', (req, res) => res.sendFile(path.join(__dirname, 'public/confirmation.html')));
-
-// --- ENVOI SMS ---
-app.post('/api/send-sms', async (req, res) => {
-  const { to, message } = req.body;
+// === ROUTE ENVOI EMAIL ===
+app.post("/api/send-email", async (req, res) => {
   try {
-    const sms = await client.messages.create({ body: message, from: TWILIO_PHONE, to });
-    console.log('SMS envoyé à', to, sms.sid);
-    res.json({ success: true });
+    const { to, subject, html } = req.body;
+    if (!to || !subject || !html) {
+      return res.status(400).json({ error: "Champs manquants" });
+    }
+
+    const msg = {
+      to,
+      from: "contact@chauffeur-prive.fr", // ⚠️ ton email SendGrid vérifié
+      subject,
+      html,
+    };
+
+    await sgMail.send(msg);
+
+    console.log(`📧 Email envoyé à ${to}`);
+    res.setHeader("Content-Type", "application/json");
+    res.json({ success: true, message: "Email envoyé" });
   } catch (err) {
-    console.error('Erreur SMS:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Erreur SendGrid:", err);
+    res
+      .status(500)
+      .json({ success: false, error: err.message || "Erreur envoi email" });
   }
 });
 
-// --- ENVOI EMAIL ---
-app.post('/api/send-email', async (req, res) => {
-  const { to, subject, html } = req.body;
+// === ROUTE ENVOI SMS ===
+app.post("/api/send-sms", async (req, res) => {
   try {
-    await sgMail.send({ to, from: SENDGRID_FROM, subject, html });
-    console.log('Email envoyé à', to);
-    res.json({ success: true });
+    if (!twilioClient) {
+      return res.status(500).json({ error: "Twilio non configuré" });
+    }
+
+    const { to, message } = req.body;
+    if (!to || !message) {
+      return res.status(400).json({ error: "Numéro ou message manquant" });
+    }
+
+    const msg = await twilioClient.messages.create({
+      from: TWILIO_PHONE,
+      to,
+      body: message,
+    });
+
+    console.log(`📱 SMS envoyé à ${to}`);
+    res.setHeader("Content-Type", "application/json");
+    res.json({ success: true, sid: msg.sid });
   } catch (err) {
-    console.error('Erreur Email:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Erreur Twilio:", err);
+    res
+      .status(500)
+      .json({ success: false, error: err.message || "Erreur envoi SMS" });
   }
 });
 
-// --- CONFIRMATION COURSE ---
-app.post('/api/confirm-course', async (req, res) => {
-  const { nom, prenom, emailClient, phoneClient, course } = req.body;
-
-  if (!nom || !prenom || !emailClient || !phoneClient || !course) {
-    return res.status(400).json({ error: 'Informations manquantes' });
-  }
-
-  try {
-    // Email client
-    const htmlClient = `
-      Bonjour ${prenom} ${nom},<br>
-      Votre course de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> est confirmée.<br>
-      Distance : ${course.distanceKm.toFixed(1)} km<br>
-      Prix : ${course.prix} €<br>
-      Heure : ${course.heure}<br>
-      📱 Un chauffeur vous contactera dans un instant.
-    `;
-    await sgMail.send({ to: emailClient, from: SENDGRID_FROM, subject: 'Confirmation de votre course', html: htmlClient });
-    console.log('Email client envoyé à', emailClient);
-
-    // Email chauffeur
-    const htmlChauffeur = `
-      Nouvelle course à confirmer :<br>
-      Client : ${prenom} ${nom}<br>
-      Téléphone : ${phoneClient}<br>
-      Email : ${emailClient}<br>
-      Départ : ${course.depart}<br>
-      Arrivée : ${course.arrivee}<br>
-      Distance : ${course.distanceKm.toFixed(1)} km<br>
-      Prix : ${course.prix} €<br>
-      Heure : ${course.heure}
-    `;
-    await sgMail.send({ to: CHAUFFEUR_EMAIL, from: SENDGRID_FROM, subject: 'Nouvelle course à effectuer', html: htmlChauffeur });
-    console.log('Email chauffeur envoyé à', CHAUFFEUR_EMAIL);
-
-    // SMS client
-    const smsMessage = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`;
-    await client.messages.create({ body: smsMessage, from: TWILIO_PHONE, to: phoneClient });
-    console.log('SMS client envoyé à', phoneClient);
-
-    res.json({ success: true });
-
-  } catch (err) {
-    console.error('Erreur confirmation course :', err.message);
-    res.status(500).json({ error: err.message });
-  }
+// === CATCH ALL (pour Vercel ou Render) ===
+app.use((req, res) => {
+  res.status(404).json({ error: "Route non trouvée" });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Serveur en ligne sur le port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Serveur actif sur le port ${PORT}`));
