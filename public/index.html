@@ -9,8 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
 body { font-family:'Poppins', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; }
-.container { max-width:420px; margin:25px auto; background:#fff; border-radius:16px; padding:30px; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
-h1 { text-align:center; font-size:1.7em; color:#1a1a1a; margin-bottom:15px; }
+.container { max-width:450px; margin:25px auto; background:#fff; border-radius:20px; padding:30px; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
+h1 { text-align:center; font-size:1.8em; color:#1a1a1a; margin-bottom:15px; }
 .info-payment { text-align:center; font-size:0.9em; color:#555; margin-bottom:20px; }
 label { display:block; font-weight:600; margin-top:12px; font-size:0.95em; }
 input, select, button { width:100%; padding:12px; margin-top:5px; border-radius:10px; border:1px solid #ccc; font-size:0.95em; box-sizing:border-box; }
@@ -24,10 +24,9 @@ button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2)
 .checkbox-label input { margin-right:8px; transform:scale(1.2); accent-color:#0066cc; }
 #datetimeFields { margin-top:5px; }
 .hidden { display:none; }
-.result { margin-top:15px; text-align:center; font-size:0.95em; background:#e6f0ff; padding:12px; border-radius:10px; font-weight:600; }
+.result { margin-top:15px; text-align:left; font-size:0.95em; background:#e6f0ff; padding:12px; border-radius:10px; font-weight:600; }
 .footer { text-align:center; margin-top:25px; font-size:0.9em; color:#555; }
 .footer a { color:#0066cc; text-decoration:none; }
-.position-relative { position:relative; }
 </style>
 </head>
 <body>
@@ -36,20 +35,17 @@ button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2)
 <div class="info-payment">💳 Paiement directement avec le chauffeur : carte bancaire, espèces ou crypto (BTC, USDT)</div>
 
 <form id="formCourse">
-<div class="position-relative">
 <label>Adresse de départ :</label>
 <input id="depart" type="text" placeholder="Ex: Marseille Gare Saint-Charles" autocomplete="off">
 <div id="depart-list" class="autocomplete-items"></div>
-</div>
 
-<div class="position-relative">
 <label>Adresse d’arrivée :</label>
 <input id="arrivee" type="text" placeholder="Ex: Aéroport Marseille Provence" autocomplete="off">
 <div id="arrivee-list" class="autocomplete-items"></div>
-</div>
 
 <label class="checkbox-label">
-<input type="checkbox" id="nowCheckbox" checked>Réserver pour tout de suite
+<input type="checkbox" id="nowCheckbox" checked>
+Réserver pour tout de suite
 </label>
 
 <div id="datetimeFields" class="hidden">
@@ -139,10 +135,10 @@ document.getElementById("formCourse").addEventListener("submit", async e=>{
   const hour = courseDate.getHours();
 
   // --- CALCUL DU PRIX ---
-  let prixBase = Math.max(25, distanceKm*1.8 + 2.5); // +2,5€ inflation
+  let prixBase = Math.max(25, distanceKm*2.5); // Prix de base + inflation
   let majoration=0;
-  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
-  if(hour>=22 || hour<6) majoration=0.3;
+  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2; // heures de pointe
+  if(hour>=22 || hour<6) majoration=0.3; // nuit
   const prixFinal=(prixBase*(1+majoration)).toFixed(2);
 
   // Sauvegarde course pour confirmation
