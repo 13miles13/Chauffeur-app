@@ -9,7 +9,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -35,10 +34,12 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// --- ROUTE API DISTANCE (via OpenRouteService) ---
+// --- ROUTE API DISTANCE ---
 app.post("/api/distance", async (req, res) => {
   try {
     const { coords } = req.body;
+    if (!coords || coords.length !== 2) throw new Error("Coordonnées invalides");
+
     const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
       method: "POST",
       headers: {
