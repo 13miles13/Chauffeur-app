@@ -1,296 +1,178 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Commande de Chauffeur - Réservation Facile</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Google Maps Places API (clé test gratuite – remplace par la tienne en prod) -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0m2x8s7z3k9j5p1q3r5t7u9w1y3a5b7c9&libraries=places"></script>
-    <!-- html2pdf.js pour générer le bon de commande PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <style>
-        body { padding-top: 20px; background-color: #f8f9fa; }
-        .container { max-width: 800px; }
-        .form-section { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        .price-display { font-size: 1.8rem; font-weight: bold; color: #198754; }
-        #confirmationPage { display: none; }
-        #loadingSpinner { display: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chauffeur Privé</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .container {
+      max-width: 500px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      margin-top: 20px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .autocomplete-items {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      z-index: 99;
+      max-height: 200px;
+      overflow-y: auto;
+      width: 100%;
+    }
+    .autocomplete-item {
+      padding: 8px;
+      cursor: pointer;
+    }
+    .autocomplete-item:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Simulateur Chauffeur</h1>
 
-<div class="container">
-    <!-- Page 1: Formulaire de réservation -->
-    <div id="reservationPage">
-        <div class="form-section">
-            <h2 class="text-center mb-4">Réserver un Chauffeur</h2>
-            <form id="reservationForm">
-                <div class="mb-3">
-                    <label for="depart" class="form-label">Lieu de départ <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="depart" placeholder="Ex: 123 Rue de Paris, Paris" required>
-                </div>
+    <form id="formCourse">
+      <label>Adresse de départ :</label>
+      <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
 
-                <div class="mb-3">
-                    <label for="arrivee" class="form-label">Lieu d'arrivée <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="arrivee" placeholder="Ex: Aéroport CDG, Paris" required>
-                </div>
+      <label>Adresse d’arrivée :</label>
+      <input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
 
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="reservationAnticipee">
-                    <label class="form-check-label" for="reservationAnticipee">
-                        Réservation à l'avance
-                    </label>
-                </div>
+      <button type="submit">Calculer le prix</button>
+    </form>
 
-                <div id="dateTimeGroup" style="display: none;">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="datePrise" class="form-label">Date de prise en charge</label>
-                            <input type="date" class="form-control" id="datePrise">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="heurePrise" class="form-label">Heure de prise en charge</label>
-                            <input type="time" class="form-control" id="heurePrise">
-                        </div>
-                    </div>
-                </div>
+    <div class="result" id="result"></div>
+  </div>
 
-                <div class="mb-3">
-                    <label for="nom" class="form-label">Nom complet <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="nom" required>
-                </div>
+  <script>
+    // === Autocomplétion OpenStreetMap (Nominatim) ===
+    async function autocomplete(inputId) {
+      const input = document.getElementById(inputId);
+      const listId = inputId + "-list";
+      let list = document.createElement("div");
+      list.setAttribute("id", listId);
+      list.setAttribute("class", "autocomplete-items");
+      input.parentNode.appendChild(list);
 
-                <div class="mb-3">
-                    <label for="telephone" class="form-label">Téléphone (pour SMS) <span class="text-danger">*</span></label>
-                    <input type="tel" class="form-control" id="telephone" required>
-                </div>
-
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email (pour confirmation) <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control" id="email" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Mode de paiement <span class="text-danger">*</span></label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="paiement" id="paiementCB" value="carte" required>
-                        <label class="form-check-label" for="paiementCB">Carte bancaire</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="paiement" id="paiementEspece" value="espèces" required>
-                        <label class="form-check-label" for="paiementEspece">Espèces</label>
-                    </div>
-                    <small class="text-muted">Le règlement sera effectué directement au chauffeur (carte ou espèces uniquement).</small>
-                </div>
-
-                <button type="submit" class="btn btn-success w-100">Calculer le prix &amp; Confirmer</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Page 2: Confirmation et prix -->
-    <div id="confirmationPage" class="form-section">
-        <h2 class="text-center mb-4">Confirmation de Réservation</h2>
-
-        <div id="loadingSpinner" class="text-center my-4">
-            <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2">Calcul du prix en cours...</p>
-        </div>
-
-        <div id="prixDetails" style="display: none;">
-            <p><strong>Trajet :</strong> <span id="trajetResume"></span></p>
-            <p><strong>Distance :</strong> <span id="distanceDisplay"></span> km</p>
-            <p class="price-display text-center" id="prixTotal"></p>
-            <p class="text-muted text-center">* Le règlement sera effectué au chauffeur en carte ou espèces.</p>
-
-            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
-                <button id="downloadBon" class="btn btn-primary me-md-2">Télécharger le bon de commande (PDF)</button>
-                <button id="retourForm" class="btn btn-secondary">Modifier la réservation</button>
-            </div>
-
-            <div id="bonTemplate" class="mt-5 p-4 border" style="display: none; background: #fff;">
-                <h4 class="text-center">BON DE COMMANDE - SERVICE CHAUFFEUR</h4>
-                <hr>
-                <p><strong>Client :</strong> <span id="bonNom"></span></p>
-                <p><strong>Téléphone :</strong> <span id="bonTel"></span></p>
-                <p><strong>Email :</strong> <span id="bonEmail"></span></p>
-                <p><strong>Départ :</strong> <span id="bonDepart"></span></p>
-                <p><strong>Arrivée :</strong> <span id="bonArrivee"></span></p>
-                <p><strong>Date/Heure :</strong> <span id="bonDateHeure"></span></p>
-                <p><strong>Distance :</strong> <span id="bonDistance"></span> km</p>
-                <p><strong>Prix total :</strong> <span id="bonPrix"></span></p>
-                <p><strong>Paiement :</strong> Au chauffeur (<span id="bonPaiement"></span>)</p>
-                <hr>
-                <p class="text-center"><em>Merci pour votre confiance !</em></p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Initialisation des autocomplétions Google Places
-    let autocompleteDepart, autocompleteArrivee;
-    function initAutocomplete() {
-        const departInput = document.getElementById('depart');
-        const arriveeInput = document.getElementById('arrivee');
-        autocompleteDepart = new google.maps.places.Autocomplete(departInput, { types: ['geocode'] });
-        autocompleteArrivee = new google.maps.places.Autocomplete(arriveeInput, { types: ['geocode'] });
-    }
-    window.onload = initAutocomplete;
-
-    // Affichage du champ date/heure si réservation anticipée
-    document.getElementById('reservationAnticipee').addEventListener('change', function() {
-        document.getElementById('dateTimeGroup').style.display = this.checked ? 'block' : 'none';
-        if (!this.checked) {
-            document.getElementById('datePrise').value = '';
-            document.getElementById('heurePrise').value = '';
+      input.addEventListener("input", async function() {
+        const val = this.value;
+        list.innerHTML = "";
+        if (!val || val.length < 3) return;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+          const data = await res.json();
+          data.forEach(place => {
+            const item = document.createElement("div");
+            item.textContent = place.display_name;
+            item.classList.add("autocomplete-item");
+            item.addEventListener("click", () => {
+              input.value = place.display_name;
+              list.innerHTML = "";
+            });
+            list.appendChild(item);
+          });
+        } catch (e) {
+          console.error("Erreur autocomplétion :", e);
         }
-    });
-
-    // Service Distance Matrix pour calculer la distance
-    let distanceService = new google.maps.DistanceMatrixService();
-
-    // Soumission du formulaire (rendu async)
-    document.getElementById('reservationForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        const depart = document.getElementById('depart').value;
-        const arrivee = document.getElementById('arrivee').value;
-        const nom = document.getElementById('nom').value;
-        const tel = document.getElementById('telephone').value;
-        const email = document.getElementById('email').value;
-        const paiement = document.querySelector('input[name="paiement"]:checked').value;
-        const anticipée = document.getElementById('reservationAnticipee').checked;
-        const datePrise = document.getElementById('datePrise').value;
-        const heurePrise = document.getElementById('heurePrise').value;
-
-        if (anticipée && (!datePrise || !heurePrise)) {
-            alert('Veuillez indiquer la date et l\'heure de prise en charge.');
-            return;
-        }
-
-        // Afficher spinner
-        document.getElementById('loadingSpinner').style.display = 'block';
-        document.getElementById('reservationPage').style.display = 'none';
-        document.getElementById('confirmationPage').style.display = 'block';
-
-        // Calcul de la distance (async callback)
-        distanceService.getDistanceMatrix({
-            origins: [depart],
-            destinations: [arrivee],
-            travelMode: 'DRIVING',
-            unitSystem: google.maps.UnitSystem.METRIC
-        }, async function(response, status) {
-            document.getElementById('loadingSpinner').style.display = 'none';
-
-            if (status !== 'OK' || !response.rows[0].elements[0].distance) {
-                alert('Impossible de calculer la distance. Veuillez vérifier les adresses.');
-                resetToForm();
-                return;
-            }
-
-            const distanceKm = response.rows[0].elements[0].distance.value / 1000;
-            const distanceText = response.rows[0].elements[0].distance.text;
-
-            // Calcul du prix : 25€ min, 2€/km au-delà de 12.5 km
-            let prix = 25;
-            if (distanceKm > 12.5) {
-                prix += (distanceKm - 12.5) * 2;
-            }
-            prix = prix.toFixed(2);
-
-            // Remplir les infos
-            document.getElementById('trajetResume').textContent = `${depart} → ${arrivee}`;
-            document.getElementById('distanceDisplay').textContent = distanceText.replace(' km', '');
-            document.getElementById('prixTotal').textContent = `${prix} €`;
-
-            // Préparer le bon
-            const dateHeure = anticipée ? `${datePrise} à ${heurePrise}` : 'Immédiate';
-            document.getElementById('bonNom').textContent = nom;
-            document.getElementById('bonTel').textContent = tel;
-            document.getElementById('bonEmail').textContent = email;
-            document.getElementById('bonDepart').textContent = depart;
-            document.getElementById('bonArrivee').textContent = arrivee;
-            document.getElementById('bonDateHeure').textContent = dateHeure;
-            document.getElementById('bonDistance').textContent = distanceText.replace(' km', '');
-            document.getElementById('bonPrix').textContent = `${prix} €`;
-            document.getElementById('bonPaiement').textContent = paiement === 'carte' ? 'Carte bancaire' : 'Espèces';
-
-            // Stocker les données pour le PDF
-            window.reservationData = { depart, arrivee, distanceKm, prix, nom, tel, email, paiement, dateHeure };
-
-            document.getElementById('prixDetails').style.display = 'block';
-
-            // Envoi SMS + Email (corrigé : async, fetch vers backend)
-            try {
-                const smsResponse = await fetch('/api/send-sms', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ to: tel, message: `Bonjour ${nom}, votre réservation est confirmée ! Départ: ${depart} → Arrivée: ${arrivee}. ${dateHeure}. Prix: ${prix}€. Paiement au chauffeur.` })
-                });
-                if (smsResponse.ok) alert('SMS envoyé !');
-            } catch (err) {
-                console.error('SMS error:', err);
-                alert('Erreur SMS – vérifie backend');
-            }
-
-            try {
-                const emailResponse = await fetch('/api/send-email', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        to: email, 
-                        subject: 'Confirmation de réservation chauffeur',
-                        html: `
-                            <h3>Réservation confirmée</h3>
-                            <p><strong>Client :</strong> ${nom}</p>
-                            <p><strong>Trajet :</strong> ${depart} → ${arrivee}</p>
-                            <p><strong>Date/Heure :</strong> ${dateHeure}</p>
-                            <p><strong>Prix :</strong> ${prix} €</p>
-                            <p><strong>Paiement :</strong> Au chauffeur en ${paiement === 'carte' ? 'carte bancaire' : 'espèces'}</p>
-                        `
-                    })
-                });
-                if (emailResponse.ok) alert('Email envoyé !');
-            } catch (err) {
-                console.error('Email error:', err);
-                alert('Erreur Email – vérifie backend');
-            }
-        });
-    });
-
-    // Téléchargement du bon PDF
-    document.getElementById('downloadBon').addEventListener('click', function() {
-        const element = document.getElementById('bonTemplate');
-        element.style.display = 'block';
-
-        const opt = {
-            margin: 1,
-            filename: 'Bon_Commande_Chauffeur.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdf().set(opt).from(element).save().then(() => {
-            element.style.display = 'none';
-        });
-    });
-
-    // Retour au formulaire
-    document.getElementById('retourForm').addEventListener('click', resetToForm);
-
-    function resetToForm() {
-        document.getElementById('confirmationPage').style.display = 'none';
-        document.getElementById('reservationPage').style.display = 'block';
-        document.getElementById('reservationForm').reset();
-        document.getElementById('dateTimeGroup').style.display = 'none';
+      });
     }
-</script>
+    autocomplete("depart");
+    autocomplete("arrivee");
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    // === Fonction pour calculer la distance ===
+    async function getDistanceKm(depart, arrivee) {
+      try {
+        const geoDepart = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(depart)}`);
+        const geoArrivee = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(arrivee)}`);
+        const [coordDepart] = await geoDepart.json();
+        const [coordArrivee] = await geoArrivee.json();
+
+        if (!coordDepart || !coordArrivee) throw new Error("Adresses invalides.");
+
+        const coords = [[coordDepart.lon, coordDepart.lat], [coordArrivee.lon, coordArrivee.lat]];
+        const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "5b3ce3597851110001cf6248e1a7a0e0b6f5452f5b79b2d2c8b7f9e0"
+          },
+          body: JSON.stringify({ coordinates: coords })
+        });
+
+        const data = await res.json();
+        const meters = data.routes[0].summary.distance;
+        return meters / 1000; // km
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    // === Gestion du formulaire ===
+    document.getElementById("formCourse").addEventListener("submit", async e => {
+      e.preventDefault();
+      const depart = document.getElementById("depart").value.trim();
+      const arrivee = document.getElementById("arrivee").value.trim();
+
+      if (!depart || !arrivee) return alert("Merci de remplir les deux adresses.");
+
+      document.getElementById("result").textContent = "Calcul en cours...";
+
+      const distanceKm = await getDistanceKm(depart, arrivee);
+      if (!distanceKm) return document.getElementById("result").textContent = "Erreur de calcul.";
+
+      const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
+      document.getElementById("result").innerHTML = `
+        Distance : ${distanceKm.toFixed(1)} km<br>
+        Prix estimé : <strong>${prix} €</strong>
+      `;
+    });
+  </script>
 </body>
 </html>
