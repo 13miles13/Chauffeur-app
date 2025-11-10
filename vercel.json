@@ -1,19 +1,19 @@
 {
-require('dotenv').config();
   "version": 2,
-const express = require('express');
   "builds": [
-const twilio = require('twilio');
-    { "src": "server.js", "use": "@vercel/node" },
-const sgMail = require('@sendgrid/mail');
-    { "src": "public/**/*", "use": "@vercel/static" }
-const path = require('path');
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
   ],
   "routes": [
-const app = express();
-    { "src": "/api/(.*)", "dest": "/server.js" },
-app.use(express.json());
-    { "src": "/(.*)", "dest": "/public/index.html" }
-app.use(express.static('public'));
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
   ]
 }
