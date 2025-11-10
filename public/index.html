@@ -26,8 +26,27 @@
       background: white; border: 1px solid #ccc; border-top: none;
       z-index: 1000; max-height: 200px; overflow-y: auto;
     }
-    .autocomplete-item { padding: 8px; cursor: pointer; }
-    .autocomplete-item:hover { background-color: #f0f0f0; }
+    .autocomplete-items {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  border-top: none;
+  z-index: 99;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.autocomplete-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 13px; /* ✅ Taille de texte réduite */
+  line-height: 1.2;
+}
+
+.autocomplete-item:hover {
+  background-color: #f0f0f0;
+}
   </style>
 </head>
 <body>
