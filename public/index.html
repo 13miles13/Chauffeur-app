@@ -140,8 +140,9 @@ document.getElementById("formCourse").addEventListener("submit",async e=>{
   if(!depart||!arrivee) return showDebug("Merci de remplir les adresses");
   document.getElementById("result").textContent="Calcul en cours...";
   showDebug("");
-
+await verifierAdresses(depart, arrivee);
   try{
+    
     const distanceKm = await getDistanceKm(depart,arrivee);
     if(!distanceKm) throw new Error("Erreur de calcul");
 
