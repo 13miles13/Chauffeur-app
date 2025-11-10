@@ -54,23 +54,6 @@
       margin-top: 20px;
       text-align: center;
     }
-    .autocomplete-items {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      border-top: none;
-      z-index: 99;
-      max-height: 200px;
-      overflow-y: auto;
-      width: 100%;
-    }
-    .autocomplete-item {
-      padding: 8px;
-      cursor: pointer;
-    }
-    .autocomplete-item:hover {
-      background-color: #f0f0f0;
-    }
   </style>
 </head>
 <body>
@@ -91,70 +74,32 @@
   </div>
 
   <script>
-    // === Autocomplétion OpenStreetMap (Nominatim) ===
-    async function autocomplete(inputId) {
-      const input = document.getElementById(inputId);
-      const listId = inputId + "-list";
-      let list = document.createElement("div");
-      list.setAttribute("id", listId);
-      list.setAttribute("class", "autocomplete-items");
-      input.parentNode.appendChild(list);
-
-      input.addEventListener("input", async function() {
-        const val = this.value;
-        list.innerHTML = "";
-        if (!val || val.length < 3) return;
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
-          const data = await res.json();
-          data.forEach(place => {
-            const item = document.createElement("div");
-            item.textContent = place.display_name;
-            item.classList.add("autocomplete-item");
-            item.addEventListener("click", () => {
-              input.value = place.display_name;
-              list.innerHTML = "";
-            });
-            list.appendChild(item);
-          });
-        } catch (e) {
-          console.error("Erreur autocomplétion :", e);
-        }
-      });
+    async function getCoordinates(address) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      return data[0] ? [parseFloat(data[0].lon), parseFloat(data[0].lat)] : null;
     }
-    autocomplete("depart");
-    autocomplete("arrivee");
 
-    // === Fonction pour calculer la distance ===
     async function getDistanceKm(depart, arrivee) {
       try {
-        const geoDepart = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(depart)}`);
-        const geoArrivee = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(arrivee)}`);
-        const [coordDepart] = await geoDepart.json();
-        const [coordArrivee] = await geoArrivee.json();
+        const coordDepart = await getCoordinates(depart);
+        const coordArrivee = await getCoordinates(arrivee);
+        if (!coordDepart || !coordArrivee) throw new Error("Adresses invalides");
 
-        if (!coordDepart || !coordArrivee) throw new Error("Adresses invalides.");
-
-        const coords = [[coordDepart.lon, coordDepart.lat], [coordArrivee.lon, coordArrivee.lat]];
-        const res = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
+        const res = await fetch("/api/distance", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "5b3ce3597851110001cf6248e1a7a0e0b6f5452f5b79b2d2c8b7f9e0"
-          },
-          body: JSON.stringify({ coordinates: coords })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ coords: [coordDepart, coordArrivee] })
         });
 
         const data = await res.json();
-        const meters = data.routes[0].summary.distance;
-        return meters / 1000; // km
+        return data?.routes?.[0]?.summary?.distance / 1000 || null;
       } catch (e) {
         console.error(e);
         return null;
       }
     }
 
-    // === Gestion du formulaire ===
     document.getElementById("formCourse").addEventListener("submit", async e => {
       e.preventDefault();
       const depart = document.getElementById("depart").value.trim();
