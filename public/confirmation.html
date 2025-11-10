@@ -1,112 +1,109 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirmation de course</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; color:#333; }
-    .container {
-      max-width: 500px; margin: 40px auto; background: #fff;
-      border-radius: 12px; padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h1 { text-align: center; color: #2c3e50; }
-    label { display:block; margin-top:15px; font-weight:bold; }
-    input { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-top:5px; }
-    button {
-      width:100%; padding:12px; background:#007bff; color:white;
-      border:none; border-radius:8px; margin-top:20px; cursor:pointer;
-      font-size:16px;
-    }
-    button:hover { background:#0056b3; }
-    .recap { margin-top:20px; line-height:1.6; }
-    .success { color: green; margin-top:10px; text-align:center; }
-    .error { color: red; margin-top:10px; text-align:center; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmation de course</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; color:#333; }
+.container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+h1 { text-align:center; color:#2c3e50; }
+label { display:block; margin-top:15px; font-weight:bold; }
+input { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-top:5px; }
+button { width:100%; padding:12px; background:#007bff; color:white; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-size:16px; }
+button:hover { background:#0056b3; }
+.recap { margin-top:20px; line-height:1.6; }
+.success { color: green; margin-top:10px; text-align:center; }
+.error { color: red; margin-top:10px; text-align:center; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Confirmation de votre course</h1>
+<div class="container">
+<h1>Confirmation de votre course</h1>
 
-    <div class="recap" id="recap"></div>
+<div class="recap" id="recap"></div>
 
-    <form id="formConfirm">
-      <label>Nom :</label>
-      <input type="text" id="nom" required>
+<form id="formConfirm">
+<label>Nom :</label>
+<input type="text" id="nom" required>
 
-      <label>Prénom :</label>
-      <input type="text" id="prenom" required>
+<label>Prénom :</label>
+<input type="text" id="prenom" required>
 
-      <label>Téléphone :</label>
-      <input type="tel" id="tel" placeholder="Ex: 0612345678 ou +33612345678"
-             required pattern="^(\+33|0)[67](\d{2}[\s\-]?){4}\d{2}$"
-             title="Ex: 0612345678 ou +33612345678">
+<label>Téléphone :</label>
+<input type="tel" id="tel" placeholder="Ex: 0612345678 ou +33612345678"
+       required pattern="^(\+33|0)[67](\d{2}[\s\-]?){4}\d{2}$"
+       title="Ex: 0612345678 ou +33612345678">
 
-      <label>Email :</label>
-      <input type="email" id="email" placeholder="exemple@mail.com" required>
+<label>Email :</label>
+<input type="email" id="email" placeholder="exemple@mail.com" required>
 
-      <button type="submit">Accepter le devis</button>
-    </form>
+<button type="submit">Accepter le devis</button>
+</form>
 
-    <div id="message"></div>
-  </div>
+<div id="message"></div>
+</div>
 
-  <script>
-    // Récupère les infos de la course depuis sessionStorage
-    const course = JSON.parse(sessionStorage.getItem("course") || "{}");
-    if (!course.depart) {
-      document.body.innerHTML = "<p>⚠️ Aucune donnée trouvée. Retournez à l'accueil.</p>";
-    } else {
-      document.getElementById("recap").innerHTML = `
-        <strong>Départ :</strong> ${course.depart}<br>
-        <strong>Arrivée :</strong> ${course.arrivee}<br>
-        <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
-        <strong>Prix estimé :</strong> <span style="color:#007bff">${course.prix} €</span>
-      `;
-    }
+<script>
+// Récupère les infos de la course depuis sessionStorage
+const course = JSON.parse(sessionStorage.getItem("course") || "{}");
 
-    // Soumission du formulaire
-    document.getElementById("formConfirm").addEventListener("submit", async e => {
-      e.preventDefault();
+if(!course.depart){
+  document.body.innerHTML = "<p>⚠️ Aucune donnée trouvée. Retournez à l'accueil.</p>";
+} else {
+  // Affiche la récap avec majoration et heure
+  const heureCourse = course.heure || "Maintenant";
+  document.getElementById("recap").innerHTML = `
+    <strong>Départ :</strong> ${course.depart}<br>
+    <strong>Arrivée :</strong> ${course.arrivee}<br>
+    <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
+    <strong>Prix estimé :</strong> <span style="color:#007bff">${course.prix} €</span><br>
+    <strong>Majoration :</strong> ${course.majoration}<br>
+    <strong>Heure :</strong> ${heureCourse}
+  `;
+}
 
-      const nom = document.getElementById("nom").value.trim();
-      const prenom = document.getElementById("prenom").value.trim();
-      let tel = document.getElementById("tel").value.trim();
-      const email = document.getElementById("email").value.trim();
+// Soumission du formulaire
+document.getElementById("formConfirm").addEventListener("submit", async e=>{
+  e.preventDefault();
 
-      if (!nom || !prenom || !tel || !email) return alert("Tous les champs sont obligatoires.");
+  const nom = document.getElementById("nom").value.trim();
+  const prenom = document.getElementById("prenom").value.trim();
+  let tel = document.getElementById("tel").value.trim();
+  const email = document.getElementById("email").value.trim();
 
-      // Nettoyer le numéro : garder seulement chiffres et + (Twilio)
-      tel = tel.replace(/[^\d\+]/g, "");
+  if(!nom || !prenom || !tel || !email) return alert("Tous les champs sont obligatoires.");
 
-      const messageTxt = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} (≈ ${course.distanceKm.toFixed(1)} km) pour ${course.prix}€ a été confirmée. Un chauffeur vous contactera sous peu.`;
+  // Nettoyage numéro pour Twilio
+  tel = tel.replace(/[^\d\+]/g,"");
 
-      try {
-        // --- Envoi du SMS ---
-        await fetch("/api/send-sms", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: tel, message: messageTxt })
-        });
+  const messageTxt = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} (≈ ${course.distanceKm.toFixed(1)} km) pour ${course.prix}€ ${course.majoration !== 'Aucune' ? '('+course.majoration+')' : ''} est confirmée. Heure prévue : ${course.heure || 'Maintenant'}.`;
 
-        // --- Envoi de l'email ---
-        await fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: email,
-            subject: "Confirmation de votre course",
-            html: `<p>${messageTxt}</p>`
-          })
-        });
-
-        document.getElementById("message").innerHTML = `<p class="success">✅ Devis accepté ! Un chauffeur vous contactera bientôt.</p>`;
-        sessionStorage.clear();
-      } catch (err) {
-        document.getElementById("message").innerHTML = `<p class="error">❌ Erreur lors de l'envoi : ${err.message}</p>`;
-      }
+  try{
+    // Envoi SMS
+    await fetch("/api/send-sms", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ to:tel, message:messageTxt })
     });
-  </script>
+
+    // Envoi email
+    await fetch("/api/send-email", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        to: email,
+        subject: "Confirmation de votre course",
+        html: `<p>${messageTxt}</p>`
+      })
+    });
+
+    document.getElementById("message").innerHTML = `<p class="success">✅ Devis accepté ! Un chauffeur vous contactera bientôt.</p>`;
+    sessionStorage.clear();
+  } catch(err){
+    document.getElementById("message").innerHTML = `<p class="error">❌ Erreur lors de l'envoi : ${err.message}</p>`;
+  }
+});
+</script>
 </body>
 </html>
