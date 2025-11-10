@@ -9,97 +9,79 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // --- CONFIG ---
-const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
+const TWILIO_SID = process.env.TWILIO_SID;
+const TWILIO_TOKEN = process.env.TWILIO_TOKEN;
 const TWILIO_PHONE = process.env.TWILIO_PHONE;
-const SENDGRID_FROM = process.env.SENDGRID_FROM;
-const CHAUFFEUR_PHONE = process.env.CHAUFFEUR_PHONE;
+
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const SENDGRID_FROM = process.env.SENDGRID_FROM || 'noreply@chauffeur-prive.fr';
+
+const CHAUFFEUR_PHONE = process.env.CHAUFFEUR_PHONE; // optionnel si on veut SMS
 const CHAUFFEUR_EMAIL = process.env.CHAUFFEUR_EMAIL;
+
+sgMail.setApiKey(SENDGRID_API_KEY);
+const client = twilio(TWILIO_SID, TWILIO_TOKEN);
 
 // --- ROUTES ---
 app.get('/', (req,res)=>{ res.sendFile(path.join(__dirname,'public/index.html')); });
+app.get('/confirmation.html', (req,res)=>{ res.sendFile(path.join(__dirname,'public/confirmation.html')); });
 
-// --- ENVOI SMS ---
-app.post('/api/send-sms', async (req,res)=>{
-  const { to, message } = req.body;
-  try {
-    const sms = await client.messages.create({ body: message, from: TWILIO_PHONE, to });
-    console.log('SMS envoyé à', to, sms.sid);
-    res.json({ success:true });
-  } catch(err){
-    console.error('Erreur SMS:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- ENVOI EMAIL ---
-app.post('/api/send-email', async (req,res)=>{
-  const { to, subject, html } = req.body;
-  try {
-    await sgMail.send({ to, from: SENDGRID_FROM, subject, html });
-    console.log('Email envoyé à', to);
-    res.json({ success:true });
-  } catch(err){
-    console.error('Erreur Email:', err.response?.body || err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// --- ENVOI CONFIRMATION CLIENT + CHAUFFEUR ---
+// --- CONFIRMATION COURSE ---
 app.post('/api/confirm-course', async (req,res)=>{
-  const { nom, prenom, email, phone } = req.body;
-  const course = req.body.course;
+    const { nom, prenom, emailClient, phoneClient } = req.body;
+    const course = req.body.course; // depart, arrivee, distanceKm, prix, heure
 
-  if(!nom || !prenom || !email || !phone || !course){
-    return res.status(400).json({ error:"Informations manquantes" });
-  }
+    if(!nom || !prenom || !emailClient || !phoneClient || !course){
+        return res.status(400).json({ error: "Champs manquants" });
+    }
 
-  try {
-    // 1️⃣ SMS client
-    const smsMessage = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`;
-    await client.messages.create({ body: smsMessage, from: TWILIO_PHONE, to: phone });
-    console.log('SMS client envoyé à', phone);
+    try {
+        // 1️⃣ Envoi email client
+        await sgMail.send({
+            to: emailClient,
+            from: SENDGRID_FROM,
+            subject: "Confirmation de votre course",
+            html: `
+                Bonjour ${prenom} ${nom},<br><br>
+                Votre course de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> est confirmée.<br>
+                Distance : ${course.distanceKm.toFixed(1)} km<br>
+                Prix : ${course.prix} €<br>
+                Heure : ${course.heure}<br><br>
+                ✅ Un chauffeur vous contactera dans un instant, restez proche de votre téléphone.
+            `
+        });
 
-    // 2️⃣ Email client
-    await sgMail.send({
-      to: email,
-      from: SENDGRID_FROM,
-      subject: "Confirmation de votre course",
-      html: `
-        Bonjour ${prenom} ${nom},<br>
-        Votre course de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> est confirmée.<br>
-        Distance : ${course.distanceKm.toFixed(1)} km<br>
-        Prix : ${course.prix} €<br>
-        Heure : ${course.heure}
-      `
-    });
-    console.log('Email client envoyé à', email);
+        // 2️⃣ Envoi SMS client
+        await client.messages.create({
+            body: `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`,
+            from: TWILIO_PHONE,
+            to: phoneClient
+        });
 
-    // 3️⃣ Email chauffeur
-    await sgMail.send({
-      to: CHAUFFEUR_EMAIL,
-      from: SENDGRID_FROM,
-      subject: "Nouvelle réservation à prendre en charge",
-      html: `
-        Nouvelle course à confirmer :<br>
-        Client : ${prenom} ${nom}<br>
-        Téléphone : ${phone}<br>
-        Départ : ${course.depart}<br>
-        Arrivée : ${course.arrivee}<br>
-        Distance : ${course.distanceKm.toFixed(1)} km<br>
-        Prix : ${course.prix} €<br>
-        Heure : ${course.heure}
-      `
-    });
-    console.log('Email chauffeur envoyé à', CHAUFFEUR_EMAIL);
+        // 3️⃣ Envoi email chauffeur
+        await sgMail.send({
+            to: CHAUFFEUR_EMAIL,
+            from: SENDGRID_FROM,
+            subject: "Nouvelle réservation",
+            html: `
+                Nouvelle course réservée :<br>
+                Client : ${prenom} ${nom}<br>
+                Email : ${emailClient}<br>
+                Téléphone : ${phoneClient}<br>
+                Départ : ${course.depart}<br>
+                Arrivée : ${course.arrivee}<br>
+                Distance : ${course.distanceKm.toFixed(1)} km<br>
+                Prix : ${course.prix} €<br>
+                Heure : ${course.heure}
+            `
+        });
 
-    res.json({ success:true });
+        res.json({ success:true });
 
-  } catch(err){
-    console.error('Erreur confirmation course:', err);
-    res.status(500).json({ error: err.message });
-  }
+    } catch(err){
+        console.error("Erreur confirmation:", err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
