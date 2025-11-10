@@ -159,6 +159,40 @@ document.getElementById("formCourse").addEventListener("submit",async e=>{
     document.getElementById("result").textContent="Erreur lors du calcul";
   }
 });
+
+  // === Vérification des coordonnées et du calcul ORS ===
+async function verifierAdresses(depart, arrivee) {
+  const coordDepart = await getCoordinates(depart);
+  const coordArrivee = await getCoordinates(arrivee);
+
+  showDebug(`📍 Coordonnées départ: ${coordDepart}, arrivée: ${coordArrivee}`);
+
+  if (!coordDepart || !coordArrivee) {
+    showDebug("⚠️ Impossible d'obtenir les coordonnées d'une des adresses (Nominatim).");
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/distance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ coords: [coordDepart, coordArrivee] })
+    });
+
+    const text = await res.text();
+    showDebug("🛰️ Réponse brute du serveur : " + text);
+
+    try {
+      const data = JSON.parse(text);
+      if (data.error) showDebug("❌ Erreur ORS : " + data.error);
+      else showDebug("✅ Distance reçue : " + (data.routes?.[0]?.summary?.distance / 1000).toFixed(2) + " km");
+    } catch (err) {
+      showDebug("⚠️ Réponse non JSON : " + err.message);
+    }
+  } catch (e) {
+    showDebug("🔥 Erreur requête /api/distance : " + e.message);
+  }
+}
 </script>
 </body>
 </html>
