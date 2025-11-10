@@ -6,8 +6,6 @@
 <title>Chauffeur Privé VTC Marseille, Aix-en-Provence – Réservation</title>
 <meta name="description" content="Réservez votre chauffeur privé, chauffeur ou VTC à Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille(s), Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane. Déplacement rapide vers l'aéroport Marseille MRS, gare ou ville.">
 <meta name="keywords" content="chauffeur privé, chauffeur, VTC, taxi pas cher, Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille, Aiguilles, Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane, aéroport Marseille, MRS, transfert gare, réservation taxi, VTC Marseille, course rapide, réservation chauffeur, prix course, transport privé, service VTC, taxi Aix, taxi Cassis, taxi Ciotat, taxi Marignane, taxi Martigues, transfert aéroport MRS, réservation en ligne">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://ton-site-vercel.app/" />
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; color:#333; }
 .container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
@@ -21,6 +19,8 @@ button:hover { background-color:#0056b3; }
 .autocomplete-item { padding:6px 8px; cursor:pointer; font-size:13px; line-height:1.2; }
 .autocomplete-item:hover { background-color:#f0f0f0; }
 .hidden { display:none; }
+.checkbox-label { display:flex; align-items:center; margin-top:15px; cursor:pointer; }
+.checkbox-label input { margin-right:10px; }
 </style>
 </head>
 <body>
@@ -30,16 +30,17 @@ button:hover { background-color:#0056b3; }
 <form id="formCourse">
 <label>Adresse de départ :</label>
 <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
+<div id="depart-list" class="autocomplete-items"></div>
 
 <label>Adresse d’arrivée :</label>
 <input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
+<div id="arrivee-list" class="autocomplete-items"></div>
 
-<label><input type="checkbox" id="nowCheckbox" checked /> Réserver tout de suite</label>
+<label class="checkbox-label"><input type="checkbox" id="nowCheckbox" checked />Réserver pour tout de suite</label>
 
 <div id="datetimeFields" class="hidden">
   <label>Date :</label>
   <input type="date" id="date">
-
   <label>Heure :</label>
   <input type="time" id="time">
 </div>
@@ -51,36 +52,31 @@ button:hover { background-color:#0056b3; }
 </div>
 
 <script>
-// === Affichage des champs date/heure selon checkbox ===
+// === Checkbox pour afficher date/heure ===
 const nowCheckbox = document.getElementById("nowCheckbox");
 const datetimeFields = document.getElementById("datetimeFields");
-
 nowCheckbox.addEventListener("change", ()=>{
   datetimeFields.classList.toggle("hidden", nowCheckbox.checked);
 });
 
 // === Autocomplétion Nominatim ===
-async function autocomplete(inputId){
+function setupAutocomplete(inputId){
   const input = document.getElementById(inputId);
-  const listId = inputId+"-list";
-  let list = document.createElement("div");
-  list.id=listId;
-  list.classList.add("autocomplete-items");
-  input.parentNode.appendChild(list);
+  const list = document.getElementById(inputId+"-list");
 
   input.addEventListener("input", async function(){
-    const val=this.value;
+    const val = this.value;
     list.innerHTML="";
     if(!val || val.length<3) return;
     try{
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
       const data = await res.json();
       data.forEach(place=>{
-        const item=document.createElement("div");
-        item.textContent=place.display_name;
+        const item = document.createElement("div");
+        item.textContent = place.display_name;
         item.classList.add("autocomplete-item");
         item.addEventListener("click", ()=>{
-          input.value=place.display_name;
+          input.value = place.display_name;
           list.innerHTML="";
         });
         list.appendChild(item);
@@ -88,8 +84,8 @@ async function autocomplete(inputId){
     }catch(e){ console.error("Erreur autocomplétion:", e); }
   });
 }
-autocomplete("depart");
-autocomplete("arrivee");
+setupAutocomplete("depart");
+setupAutocomplete("arrivee");
 
 // === Géocodage ===
 async function getCoordinates(address){
@@ -138,14 +134,14 @@ document.getElementById("formCourse").addEventListener("submit", async e=>{
 
   const hour = courseDate.getHours();
 
-  // === Calcul prix avec majoration selon heure ===
-  let prixBase = Math.max(10,(distanceKm*1.8).toFixed(2));
+  // === Calcul prix avec majoration et minimum 25€ ===
+  let prixBase = Math.max(25, distanceKm*1.8);
   let majoration = 0;
   if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
   if(hour>=22 || hour<6) majoration=0.3;
   const prixFinal = (prixBase*(1+majoration)).toFixed(2);
 
-  // === Sauvegarde sessionStorage ===
+  // Sauvegarde pour page confirmation
   sessionStorage.setItem("course", JSON.stringify({
     depart,
     arrivee,
