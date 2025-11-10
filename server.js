@@ -55,20 +55,20 @@ app.post("/api/distance", async (req, res) => {
 
     const text = await response.text();
 
-    // Tenter de parser JSON
+    // Toujours renvoyer JSON
     let data;
-    try { data = JSON.parse(text); } 
-    catch(err){ 
-      console.error("ORS ne renvoie pas du JSON :", text); 
-      return res.status(500).json({ error: "ORS renvoie une réponse non JSON", raw: text }); 
-    }
-
-    if(data.error || !data.routes) {
-      console.error("Erreur ORS :", data);
-      return res.status(500).json({ error: data.error || "Erreur ORS", raw: text });
+    try {
+      data = JSON.parse(text);
+      if(data.error || !data.routes) {
+        return res.status(500).json({ error: data.error || "Erreur ORS", raw: text });
+      }
+    } catch(err) {
+      // ORS a renvoyé du HTML ou texte non JSON
+      return res.status(500).json({ error: "ORS renvoie une réponse non JSON", raw: text });
     }
 
     res.json(data);
+
   } catch(err) {
     console.error("Erreur distance:", err);
     res.status(500).json({ error: err.message });
