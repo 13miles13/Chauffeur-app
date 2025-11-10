@@ -7,16 +7,16 @@
 <meta name="description" content="Confirmez votre réservation chauffeur privé ou VTC à Marseille, Aix-en-Provence et alentours. Transfert aéroport, course rapide et sécurisée.">
 <meta name="keywords" content="chauffeur, VTC, taxi, Marseille, Aix en Provence, Cassis, Ciotat, Martigues, Marignane, Vitrolles, réservation chauffeur, course privée, transfert aéroport">
 <style>
-body { font-family: Arial, sans-serif; background:#f5f5f5; margin:0; padding:0; }
-.container { max-width:400px; margin:20px auto; background:#fff; border-radius:12px; padding:15px; box-shadow:0 3px 8px rgba(0,0,0,0.1); }
-h1 { text-align:center; font-size:1.4em; color:#2c3e50; margin-bottom:15px; }
-label { display:block; font-weight:bold; margin-top:10px; font-size:0.9em; }
-input[type=text], input[type=tel], input[type=email] { width:100%; padding:8px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; }
-button { width:100%; padding:10px; background-color:#007bff; color:white; border:none; margin-top:15px; cursor:pointer; font-size:0.9em; border-radius:6px; }
-button:hover { background-color:#0056b3; }
+body { font-family:'Segoe UI', Arial, sans-serif; background:#f0f2f5; margin:0; padding:0; }
+.container { max-width:400px; margin:20px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1); }
+h1 { text-align:center; font-size:1.4em; color:#1a1a1a; margin-bottom:20px; }
+label { display:block; font-weight:bold; margin-top:12px; font-size:0.9em; }
+input[type=text], input[type=tel], input[type=email] { width:100%; padding:10px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; }
+button { width:100%; padding:10px; background-color:#0066cc; color:white; border:none; margin-top:15px; cursor:pointer; font-size:0.9em; border-radius:6px; transition:0.3s; }
+button:hover { background-color:#004999; }
 .checkbox-label { display:flex; align-items:center; margin-top:10px; cursor:pointer; font-size:0.9em; }
 .checkbox-label input { margin-right:8px; transform:scale(1.2); }
-.result { margin-top:10px; text-align:center; font-size:0.9em; }
+.result { margin-top:12px; text-align:center; font-size:0.9em; background:#e6f0ff; padding:8px; border-radius:6px; }
 .recap p { margin:4px 0; font-size:0.9em; }
 </style>
 </head>
@@ -50,7 +50,6 @@ button:hover { background-color:#0056b3; }
 </div>
 
 <script>
-// Récapitulatif
 const recapDiv = document.getElementById("recap");
 const course = JSON.parse(sessionStorage.getItem("course") || "{}");
 
@@ -64,7 +63,6 @@ if(course && course.depart && course.arrivee){
   `;
 }
 
-// Formulaire validation + envoi SMS/Email
 document.getElementById("confirmForm").addEventListener("submit", async e=>{
   e.preventDefault();
   const nom = document.getElementById("nom").value.trim();
@@ -102,7 +100,7 @@ document.getElementById("confirmForm").addEventListener("submit", async e=>{
     });
   }catch(err){ console.error("Erreur email:", err); }
 
-  document.getElementById("result").textContent="✅ Devis accepté ! SMS et email envoyés (verifiez vos spam).";
+  document.getElementById("result").textContent="✅ Devis accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception).";
 });
 </script>
 </body>
