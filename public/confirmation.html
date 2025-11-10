@@ -3,105 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Confirmation du Devis – Chauffeur Privé</title>
-<meta name="description" content="Confirmez votre réservation chauffeur privé ou VTC à Marseille, Aix-en-Provence et alentours. Transfert aéroport, course rapide et sécurisée.">
-<meta name="keywords" content="chauffeur, VTC, taxi, Marseille, Aix en Provence, Cassis, Ciotat, Martigues, Marignane, Vitrolles, réservation chauffeur, course privée, transfert aéroport">
+<title>Confirmation Devis Chauffeur Privé</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body { font-family:'Segoe UI', Arial, sans-serif; background:#f0f2f5; margin:0; padding:0; }
-.container { max-width:400px; margin:20px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1); }
-h1 { text-align:center; font-size:1.4em; color:#1a1a1a; margin-bottom:20px; }
-label { display:block; font-weight:bold; margin-top:12px; font-size:0.9em; }
-input[type=text], input[type=tel], input[type=email] { width:100%; padding:10px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; }
-button { width:100%; padding:10px; background-color:#0066cc; color:white; border:none; margin-top:15px; cursor:pointer; font-size:0.9em; border-radius:6px; transition:0.3s; }
-button:hover { background-color:#004999; }
-.checkbox-label { display:flex; align-items:center; margin-top:10px; cursor:pointer; font-size:0.9em; }
-.checkbox-label input { margin-right:8px; transform:scale(1.2); }
-.result { margin-top:12px; text-align:center; font-size:0.9em; background:#e6f0ff; padding:8px; border-radius:6px; }
-.recap p { margin:4px 0; font-size:0.9em; }
+body { font-family:'Poppins', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; }
+.container { max-width:420px; margin:25px auto; background:#fff; border-radius:16px; padding:25px; box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+h1 { text-align:center; font-size:1.7em; color:#1a1a1a; margin-bottom:20px; }
+label { display:block; font-weight:600; margin-top:12px; font-size:0.95em; }
+input { width:100%; padding:12px; margin-top:5px; border-radius:8px; border:1px solid #ccc; font-size:0.95em; }
+input:focus { outline:none; border-color:#0066cc; box-shadow:0 0 5px rgba(0,102,204,0.3); }
+button { background:linear-gradient(90deg,#0066cc,#004999); color:white; border:none; margin-top:18px; cursor:pointer; font-size:1em; font-weight:600; border-radius:8px; transition:0.3s; width:100%; padding:14px; }
+button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2); }
+.checkbox-label { display:flex; align-items:center; margin-top:12px; cursor:pointer; font-size:0.95em; flex-wrap:nowrap; }
+.checkbox-label input { margin-right:8px; transform:scale(1.2); accent-color:#0066cc; }
+.result { background:#e6f0ff; padding:12px; border-radius:8px; font-weight:600; margin-bottom:15px; font-size:0.95em; }
+.error { color:red; font-size:0.9em; margin-top:5px; }
 </style>
 </head>
 <body>
 <div class="container">
 <h1>Confirmation du Devis</h1>
 
-<div id="recap" class="recap"></div>
+<div class="result" id="recap"></div>
 
 <form id="confirmForm">
 <label>Nom :</label>
-<input type="text" id="nom" required placeholder="Votre nom">
+<input type="text" id="nom" required>
 
 <label>Prénom :</label>
-<input type="text" id="prenom" required placeholder="Votre prénom">
+<input type="text" id="prenom" required>
 
 <label>Email :</label>
-<input type="email" id="email" required placeholder="Ex: nom@exemple.com">
+<input type="email" id="email" required>
 
 <label>Téléphone :</label>
-<input type="tel" id="tel" required placeholder="Ex: 0612345678 ou +33612345678"
-       pattern="^(\+33|0)[67]\d{8}$"
-       title="Ex: 0612345678 ou +33612345678">
+<input type="tel" id="phone" placeholder="Ex: 06XXXXXXXX" required>
 
-<label class="checkbox-label"><input type="checkbox" id="confirmCheck" required>J’accepte que mes coordonnées soient utilisées pour contacter le chauffeur</label>
+<label class="checkbox-label">
+<input type="checkbox" id="acceptCheckbox" required>
+J’accepte que mes coordonnées soient utilisées pour la réservation
+</label>
+
+<div class="error" id="formError"></div>
 
 <button type="submit">Accepter le devis</button>
+<div id="successMsg" style="margin-top:12px;font-weight:600;color:green;"></div>
 </form>
-
-<div class="result" id="result"></div>
 </div>
 
 <script>
+// Récup course depuis sessionStorage
 const recapDiv = document.getElementById("recap");
-const course = JSON.parse(sessionStorage.getItem("course") || "{}");
-
-if(course && course.depart && course.arrivee){
+const course = JSON.parse(sessionStorage.getItem("course")||"{}");
+if(course.depart) {
   recapDiv.innerHTML = `
-    <p><strong>Départ :</strong> ${course.depart}</p>
-    <p><strong>Arrivée :</strong> ${course.arrivee}</p>
-    <p><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</p>
-    <p><strong>Prix :</strong> ${course.prix} € (${course.majoration})</p>
-    <p><strong>Heure de la course :</strong> ${course.heure}</p>
+    📍 Départ : ${course.depart}<br>
+    📍 Arrivée : ${course.arrivee}<br>
+    🛣️ Distance : ${course.distanceKm.toFixed(1)} km<br>
+    💶 Prix : ${course.prix} € (${course.majoration})<br>
+    ⏰ Heure : ${course.heure}
   `;
 }
 
+// Validation formulaire
 document.getElementById("confirmForm").addEventListener("submit", async e=>{
   e.preventDefault();
   const nom = document.getElementById("nom").value.trim();
   const prenom = document.getElementById("prenom").value.trim();
-  let tel = document.getElementById("tel").value.trim();
-  tel = tel.replace(/[^\d\+]/g,"");
   const email = document.getElementById("email").value.trim();
-  const check = document.getElementById("confirmCheck").checked;
+  const phone = document.getElementById("phone").value.trim();
+  const accept = document.getElementById("acceptCheckbox").checked;
+  const errorDiv = document.getElementById("formError");
+  errorDiv.textContent="";
 
-  if(!nom||!prenom||!tel||!email||!check){ alert("Merci de remplir tous les champs et d'accepter l'utilisation de vos coordonnées."); return; }
+  if(!nom||!prenom||!email||!phone) { errorDiv.textContent="Tous les champs sont obligatoires"; return; }
+  const phoneRegex = /^(?:0|\+33)[1-9]\d{8}$/;
+  if(!phoneRegex.test(phone)) { errorDiv.textContent="Numéro de téléphone invalide"; return; }
+  if(!accept) { errorDiv.textContent="Vous devez accepter l'utilisation de vos coordonnées"; return; }
 
+  // Envoi SMS et Email via backend
   try{
-    await fetch("/api/send-sms", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        to: tel,
-        message: `Bonjour ${prenom}, votre réservation chauffeur pour ${course.depart} → ${course.arrivee} est confirmée. Prix : ${course.prix} €.`
-      })
-    });
-  }catch(err){ console.error("Erreur SMS:", err); }
+    const payload = {
+      nom, prenom, email, phone,
+      depart: course.depart, arrivee: course.arrivee,
+      distance: course.distanceKm, prix: course.prix, heure: course.heure
+    };
+    // SMS
+    await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:phone,message:`Bonjour ${prenom}, votre réservation de chauffeur de ${course.depart} à ${course.arrivee} pour ${course.prix} € est confirmée.`})});
+    // Email
+    await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:email,subject:"Confirmation Réservation Chauffeur",html:`<p>Bonjour ${prenom},</p><p>Votre réservation de chauffeur privé de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> pour <strong>${course.prix} €</strong> (${course.majoration}) est confirmée.</p><p>Heure : ${course.heure}</p>`})});
 
-  try{
-    await fetch("/api/send-email",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        to: email,
-        subject: "Confirmation de votre réservation chauffeur",
-        html: `<p>Bonjour ${prenom},</p>
-<p>Votre réservation chauffeur pour <strong>${course.depart} → ${course.arrivee}</strong> est confirmée.</p>
-<p>Distance : ${course.distanceKm.toFixed(1)} km<br>Prix : ${course.prix} € (${course.majoration})<br>Heure : ${course.heure}</p>
-<p>Merci de votre confiance !</p>`
-      })
-    });
-  }catch(err){ console.error("Erreur email:", err); }
-
-  document.getElementById("result").textContent="✅ Devis accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
+    document.getElementById("successMsg").textContent="✅ Devis accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
+    document.getElementById("confirmForm").reset();
+  }catch(err){ errorDiv.textContent="Erreur lors de l'envoi, réessayez plus tard"; console.error(err);}
 });
 </script>
 </body>
 </html>
+  
