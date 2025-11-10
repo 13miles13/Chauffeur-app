@@ -21,6 +21,8 @@
     }
     button:hover { background:#0056b3; }
     .recap { margin-top:20px; line-height:1.6; }
+    .success { color: green; margin-top:10px; text-align:center; }
+    .error { color: red; margin-top:10px; text-align:center; }
   </style>
 </head>
 <body>
@@ -37,20 +39,21 @@
       <input type="text" id="prenom" required>
 
       <label>Téléphone :</label>
-      <input type="tel" id="tel" placeholder="+33612345678" required
-       pattern="^(\+33|0)[67](\d{2}[\s\-]?){4}\d{2}$"
-       title="Ex: 0612345678 ou +33612345678">
+      <input type="tel" id="tel" placeholder="Ex: 0612345678 ou +33612345678"
+             required pattern="^(\+33|0)[67](\d{2}[\s\-]?){4}\d{2}$"
+             title="Ex: 0612345678 ou +33612345678">
+
       <label>Email :</label>
       <input type="email" id="email" placeholder="exemple@mail.com" required>
 
       <button type="submit">Accepter le devis</button>
     </form>
 
-    <div id="message" style="margin-top:20px;text-align:center;color:green;"></div>
+    <div id="message"></div>
   </div>
 
   <script>
-    // Charger les données stockées
+    // Récupère les infos de la course depuis sessionStorage
     const course = JSON.parse(sessionStorage.getItem("course") || "{}");
     if (!course.depart) {
       document.body.innerHTML = "<p>⚠️ Aucune donnée trouvée. Retournez à l'accueil.</p>";
@@ -63,15 +66,19 @@
       `;
     }
 
-    // Validation du formulaire
+    // Soumission du formulaire
     document.getElementById("formConfirm").addEventListener("submit", async e => {
       e.preventDefault();
+
       const nom = document.getElementById("nom").value.trim();
       const prenom = document.getElementById("prenom").value.trim();
-      const tel = document.getElementById("tel").value.trim();
+      let tel = document.getElementById("tel").value.trim();
       const email = document.getElementById("email").value.trim();
 
       if (!nom || !prenom || !tel || !email) return alert("Tous les champs sont obligatoires.");
+
+      // Nettoyer le numéro : garder seulement chiffres et + (Twilio)
+      tel = tel.replace(/[^\d\+]/g, "");
 
       const messageTxt = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} (≈ ${course.distanceKm.toFixed(1)} km) pour ${course.prix}€ a été confirmée. Un chauffeur vous contactera sous peu.`;
 
@@ -94,9 +101,10 @@
           })
         });
 
-        document.getElementById("message").textContent = "✅ Devis accepté ! Un chauffeur vous contactera bientôt.";
+        document.getElementById("message").innerHTML = `<p class="success">✅ Devis accepté ! Un chauffeur vous contactera bientôt.</p>`;
+        sessionStorage.clear();
       } catch (err) {
-        alert("Erreur d'envoi : " + err.message);
+        document.getElementById("message").innerHTML = `<p class="error">❌ Erreur lors de l'envoi : ${err.message}</p>`;
       }
     });
   </script>
