@@ -1,119 +1,53 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Réservation Chauffeur</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f6f8fa;
-      margin: 0;
-      padding: 0;
-    }
+    body { font-family: Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
     .container {
-      max-width: 480px;
-      margin: 30px auto;
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      position: relative;
+      max-width: 480px; margin: 40px auto; background: #fff;
+      border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     h1 { text-align: center; color: #333; }
     label { font-weight: bold; margin-top: 10px; display: block; }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 15px;
-    }
-    .input-wrapper {
-      position: relative;
-    }
+    input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; }
+    .input-wrapper { position: relative; }
     button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 20px;
-      border: none;
-      border-radius: 8px;
-      background-color: #007bff;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
+      width: 100%; padding: 12px; margin-top: 20px; border: none;
+      border-radius: 8px; background-color: #007bff; color: white;
+      font-size: 16px; cursor: pointer;
     }
     button:hover { background-color: #0056b3; }
-    .result { margin-top: 20px; text-align: center; font-size: 17px; }
+    .result { margin-top: 20px; text-align: center; }
     .autocomplete-items {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: white;
-      border: 1px solid #ccc;
-      border-top: none;
-      z-index: 1000;
-      max-height: 200px;
-      overflow-y: auto;
-      border-radius: 0 0 8px 8px;
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: white; border: 1px solid #ccc; border-top: none;
+      z-index: 1000; max-height: 200px; overflow-y: auto;
     }
-    .autocomplete-item {
-      padding: 8px;
-      cursor: pointer;
-    }
-    .autocomplete-item:hover {
-      background-color: #f0f0f0;
-    }
+    .autocomplete-item { padding: 8px; cursor: pointer; }
+    .autocomplete-item:hover { background-color: #f0f0f0; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Réserver un chauffeur</h1>
+    <h1>Simulateur Chauffeur</h1>
     <form id="formCourse">
       <label>Adresse de départ :</label>
       <div class="input-wrapper">
         <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
       </div>
-
       <label>Adresse d’arrivée :</label>
       <div class="input-wrapper">
         <input id="arrivee" type="text" placeholder="Ex: Aéroport Marseille" autocomplete="off" />
       </div>
-
-      <label>Numéro de téléphone :</label>
-      <input id="tel" type="tel" placeholder="+33..." />
-
-      <label>Email :</label>
-      <input id="email" type="email" placeholder="exemple@mail.com" />
-
-      <button type="submit">Calculer et Confirmer</button>
+      <button type="submit">Calculer le prix</button>
     </form>
-
     <div id="result" class="result"></div>
   </div>
 
   <script>
-    // === Zone de debug mobile ===
-    function showDebug(msg) {
-      let box = document.getElementById("debugBox");
-      if (!box) {
-        box = document.createElement("div");
-        Object.assign(box.style, {
-          position: "fixed", bottom: "0", left: "0", width: "100%", maxHeight: "40vh",
-          background: "rgba(0,0,0,0.85)", color: "#0f0", fontSize: "12px",
-          fontFamily: "monospace", overflowY: "auto", padding: "6px", zIndex: "9999"
-        });
-        box.id = "debugBox";
-        document.body.appendChild(box);
-      }
-      const t = new Date().toLocaleTimeString();
-      box.innerHTML += `[${t}] ${msg}<br>`;
-      box.scrollTop = box.scrollHeight;
-    }
-
-    // === Autocomplétion Nominatim (affiche sous le champ correspondant) ===
     async function autocomplete(inputId) {
       const input = document.getElementById(inputId);
       const wrapper = input.parentNode;
@@ -126,22 +60,18 @@
         list.innerHTML = "";
         if (!val || val.length < 3) return;
 
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
-          const data = await res.json();
-          data.forEach(place => {
-            const item = document.createElement("div");
-            item.classList.add("autocomplete-item");
-            item.textContent = place.display_name;
-            item.addEventListener("click", () => {
-              input.value = place.display_name;
-              list.innerHTML = "";
-            });
-            list.appendChild(item);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`);
+        const data = await res.json();
+        data.forEach(place => {
+          const item = document.createElement("div");
+          item.classList.add("autocomplete-item");
+          item.textContent = place.display_name;
+          item.addEventListener("click", () => {
+            input.value = place.display_name;
+            list.innerHTML = "";
           });
-        } catch (e) {
-          showDebug("Erreur autocomplétion: " + e.message);
-        }
+          list.appendChild(item);
+        });
       });
 
       document.addEventListener("click", e => {
@@ -151,20 +81,13 @@
     autocomplete("depart");
     autocomplete("arrivee");
 
-    // === Coordonnées via Nominatim ===
     async function getCoordinates(address) {
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-        const data = await res.json();
-        if (!data[0]) return null;
-        return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-      } catch (e) {
-        showDebug("Erreur coordonnées: " + e.message);
-        return null;
-      }
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+      const data = await res.json();
+      if (!data[0]) return null;
+      return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
     }
 
-    // === Calcul Haversine ===
     function calcDistanceKm([lon1, lat1], [lon2, lat2]) {
       const R = 6371;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -174,40 +97,21 @@
       return R * c;
     }
 
-    // === Formulaire ===
     document.getElementById("formCourse").addEventListener("submit", async e => {
       e.preventDefault();
       const depart = document.getElementById("depart").value.trim();
       const arrivee = document.getElementById("arrivee").value.trim();
-      const tel = document.getElementById("tel").value.trim();
-      const email = document.getElementById("email").value.trim();
-
-      if (!depart || !arrivee) return alert("Merci de renseigner les deux adresses.");
-      document.getElementById("result").textContent = "Calcul en cours...";
+      if (!depart || !arrivee) return alert("Merci de remplir les deux adresses.");
 
       const coordDepart = await getCoordinates(depart);
       const coordArrivee = await getCoordinates(arrivee);
-      if (!coordDepart || !coordArrivee) return document.getElementById("result").textContent = "Adresses introuvables.";
+      if (!coordDepart || !coordArrivee) return alert("Adresses introuvables.");
 
       const distanceKm = calcDistanceKm(coordDepart, coordArrivee);
       const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
 
-      document.getElementById("result").innerHTML = `
-        Distance : ${distanceKm.toFixed(1)} km<br>
-        Prix estimé : <strong>${prix} €</strong>
-      `;
-
-      // Envoi confirmation
-      try {
-        await fetch("/api/confirmation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: tel, email, depart, arrivee, prix })
-        });
-        showDebug("✅ Confirmation envoyée");
-      } catch (err) {
-        showDebug("❌ Erreur envoi confirmation: " + err.message);
-      }
+      sessionStorage.setItem("course", JSON.stringify({ depart, arrivee, distanceKm, prix }));
+      window.location.href = "confirmation.html";
     });
   </script>
 </body>
