@@ -1,48 +1,60 @@
-// /api/send-email.js
+// api/send-email.js
 import sgMail from "@sendgrid/mail";
 
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end();
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Méthode non autorisée" });
+  }
+
+  const { clientEmail, clientName, depart, arrivee, distance, prix } = req.body;
+
+  if (!clientEmail || !depart || !arrivee || !prix) {
+    return res.status(400).json({ error: "Informations manquantes" });
+  }
 
   try {
-    const { to, subject, html, chauffeurInfo } = req.body;
-
-    // Configuration SendGrid
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-    // --- Envoi email au client ---
-    const msgClient = {
-      to,
-      from: "contact@chauffeur-prive.fr", // ton email d’envoi vérifié SendGrid
-      subject,
-      html,
-    };
-
-    // --- Envoi email au chauffeur ---
-    const msgChauffeur = {
-      to: "selimmeguennitani@gmail.com", // <== ton email chauffeur
-      from: "contact@chauffeur-prive.fr",
-      subject: "🆕 Nouvelle réservation client",
+    // Message au client
+    const clientMsg = {
+      to: clientEmail,
+      from: "no-reply@votre-site.com", // remplace par ton adresse validée sur SendGrid
+      subject: "Confirmation de votre réservation",
       html: `
-        <h3>Nouvelle course réservée</h3>
-        <p><strong>Nom :</strong> ${chauffeurInfo?.nom} ${chauffeurInfo?.prenom}</p>
-        <p><strong>Email :</strong> ${chauffeurInfo?.email}</p>
-        <p><strong>Téléphone :</strong> ${chauffeurInfo?.phone}</p>
-        <hr>
-        <p><strong>Départ :</strong> ${chauffeurInfo?.depart}</p>
-        <p><strong>Arrivée :</strong> ${chauffeurInfo?.arrivee}</p>
-        <p><strong>Distance :</strong> ${chauffeurInfo?.distanceKm} km</p>
-        <p><strong>Prix :</strong> ${chauffeurInfo?.prix} €</p>
-        <p><strong>Heure :</strong> ${chauffeurInfo?.heure}</p>
+        <h2>Votre réservation a bien été confirmée ✅</h2>
+        <p><strong>Départ :</strong> ${depart}</p>
+        <p><strong>Arrivée :</strong> ${arrivee}</p>
+        <p><strong>Distance :</strong> ${distance} km</p>
+        <p><strong>Prix total :</strong> ${prix} €</p>
+        <br>
+        <p>Un chauffeur va bientôt vous contacter. 📱</p>
+        <p style="font-style: italic;">Merci de votre confiance !</p>
       `,
     };
 
-    // Envoi simultané
-    await Promise.all([sgMail.send(msgClient), sgMail.send(msgChauffeur)]);
+    // Message au chauffeur
+    const chauffeurMsg = {
+      to: "selimmeguennitani@gmail.com",
+      from: "no-reply@votre-site.com",
+      subject: "Nouvelle réservation reçue 🚗",
+      html: `
+        <h2>Nouvelle réservation client</h2>
+        <p><strong>Nom :</strong> ${clientName || "Inconnu"}</p>
+        <p><strong>Email :</strong> ${clientEmail}</p>
+        <p><strong>Départ :</strong> ${depart}</p>
+        <p><strong>Arrivée :</strong> ${arrivee}</p>
+        <p><strong>Distance :</strong> ${distance} km</p>
+        <p><strong>Prix estimé :</strong> ${prix} €</p>
+      `,
+    };
+
+    // Envoi simultané des deux emails
+    await sgMail.send(clientMsg);
+    await sgMail.send(chauffeurMsg);
 
     res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Erreur SendGrid:", err);
-    res.status(500).json({ error: "Erreur d’envoi d’email" });
+  } catch (error) {
+    console.error("Erreur d'envoi d'email:", error);
+    res.status(500).json({ error: "Erreur d'envoi d'email" });
   }
 }
