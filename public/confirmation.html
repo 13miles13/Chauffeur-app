@@ -1,211 +1,235 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title> Confirmez votre réservation </title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-<style>
-body {
-    font-family:'Poppins', sans-serif;
-    margin:0;
-    padding:0;
-    background:#f0f2f5;
-    color:#333;
-}
-.container {
-    max-width:420px;
-    margin:25px auto;
-    background:#fff;
-    border-radius:20px;
-    padding:30px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
-}
-h1 {
-    text-align:center;
-    font-size:1.7em;
-    color:#1a1a1a;
-    margin-bottom:15px;
-}
-label {
-    display:block;
-    font-weight:600;
-    margin-top:12px;
-    font-size:0.95em;
-}
-input, button {
-    width:100%;
-    padding:12px;
-    margin-top:5px;
-    border-radius:10px;
-    border:1px solid #ccc;
-    font-size:0.95em;
-    box-sizing:border-box;
-}
-input:focus {
-    outline:none;
-    border-color:#0066cc;
-    box-shadow:0 0 5px rgba(0,102,204,0.3);
-}
-button {
-    background:linear-gradient(90deg,#0066cc,#004999);
-    color:white;
-    border:none;
-    margin-top:20px;
-    cursor:pointer;
-    font-size:1em;
-    font-weight:600;
-    border-radius:10px;
-    transition:0.3s;
-}
-button:hover {
-    transform:translateY(-2px);
-    box-shadow:0 6px 15px rgba(0,0,0,0.2);
-}
-.result {
-    margin-top:15px;
-    text-align:center;
-    font-size:0.95em;
-    background:#e6f0ff;
-    padding:12px;
-    border-radius:10px;
-    font-weight:600;
-}
-.footer {
-    text-align:center;
-    margin-top:30px;
-    font-size:0.9em;
-    color:#555;
-}
-.footer a { color:#0066cc; text-decoration:none; }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Confirmation de réservation — Chauffeur Privé</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --container-max:420px;
+      --bg:#f0f2f5;
+      --card:#fff;
+      --accent-1:#0066cc;
+      --accent-2:#004999;
+      --muted:#555;
+      --success-bg:#dff3df;
+      --info-bg:#e6f0ff;
+      --radius:12px;
+    }
+    html,body{height:100%;}
+    body{
+      font-family:"Poppins",sans-serif;
+      margin:0;
+      padding:20px;
+      background:var(--bg);
+      color:#222;
+      -webkit-font-smoothing:antialiased;
+    }
+    .wrap{
+      max-width:var(--container-max);
+      margin:24px auto;
+      padding:24px;
+      background:var(--card);
+      border-radius:20px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.12);
+      box-sizing:border-box;
+    }
+    h1{
+      margin:0 0 12px 0;
+      text-align:center;
+      font-size:1.6rem;
+      color:#111;
+    }
+    label{display:block; font-weight:600; margin-top:14px; font-size:0.95rem;}
+    input, button{
+      width:100%;
+      padding:13px;
+      margin-top:8px;
+      border-radius:12px;
+      border:1px solid #d0d7de;
+      font-size:0.95rem;
+      box-sizing:border-box;
+      background:white;
+    }
+    input:focus{outline:none; border-color:var(--accent-1); box-shadow:0 6px 18px rgba(0,102,204,0.12);}
+    button{
+      margin-top:20px;
+      background:linear-gradient(90deg,var(--accent-1),var(--accent-2));
+      color:#fff; font-weight:700; border:none; cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+    button:hover{ transform:translateY(-3px); box-shadow:0 12px 30px rgba(0,0,0,0.14); }
+    .recap {
+      margin-top:14px;
+      background:var(--info-bg);
+      padding:14px;
+      border-radius:12px;
+      font-weight:600;
+      line-height:1.5;
+      color:#0e2a47;
+    }
+    .recap div{ margin-bottom:8px; text-align:left; font-weight:600; }
+    .message-final {
+      display:none;
+      margin-top:14px;
+      padding:14px;
+      background:var(--success-bg);
+      border-radius:12px;
+      font-weight:700;
+      white-space:pre-line;
+      color:#0a5a10;
+    }
+    .footer{
+      text-align:center; margin-top:18px; font-size:0.9rem; color:var(--muted);
+    }
+    .footer a{color:var(--accent-1); text-decoration:none;}
+  </style>
 </head>
 <body>
-<div class="container">
-<h1>Confirmation de votre course</h1>
+  <main class="wrap">
+    <h1>Confirmation de votre course</h1>
 
-<div id="recap" class="result"></div>
+    <div id="recap" class="recap"></div>
 
-<form id="confirmForm">
-<label>Nom :</label>
-<input type="text" id="nom" required>
+    <form id="confirmForm" novalidate>
+      <label for="nom">Nom</label>
+      <input id="nom" type="text" required placeholder="Votre nom">
 
-<label>Prénom :</label>
-<input type="text" id="prenom" required>
+      <label for="prenom">Prénom</label>
+      <input id="prenom" type="text" required placeholder="Votre prénom">
 
-<label>Email :</label>
-<input type="email" id="email" placeholder="exemple@domaine.com" required>
+      <label for="email">Email</label>
+      <input id="email" type="email" required placeholder="exemple@domaine.com">
 
-<label>Téléphone :</label>
-<input type="tel" id="phone" placeholder="+33XXXXXXXXX" required pattern="^\+33[1-9]\d{8}$">
+      <label for="phone">Téléphone</label>
+      <input id="phone" type="tel" required placeholder="+33XXXXXXXXX" pattern="^\+33[1-9]\d{8}$">
 
-<button type="submit">Accepter le devis</button>
-</form>
+      <button type="submit" id="submitBtn">Accepter le devis</button>
+    </form>
 
-<div id="messageFinal" class="result" style="display:none; white-space: pre-line;"></div>
-</div>
+    <div id="messageFinal" class="message-final"></div>
+  </main>
 
-<div class="footer">
-📞 Contact : <a href="tel:+33000000000">+33 0X XX XX XX XX</a><br>
-✉️ Email : <a href="mailto:contact@chauffeur-prive.fr">contact@chauffeur-prive.fr</a>
-</div>
+  <div class="footer">
+    📞 Contact : <a href="tel:+33763133397">07 63 13 33 97</a> — ✉️ <a href="mailto:selimmeguennitani@gmail.com">selimmeguennitani@gmail.com</a>
+  </div>
 
 <script>
-const recapDiv = document.getElementById("recap");
-const form = document.getElementById("confirmForm");
-const messageFinal = document.getElementById("messageFinal");
+const recapEl = document.getElementById('recap');
+const course = JSON.parse(sessionStorage.getItem('course') || '{}');
 
-// Récupération des données de la course depuis sessionStorage
-const course = JSON.parse(sessionStorage.getItem("course") || "{}");
-if(course && Object.keys(course).length>0){
-  recapDiv.innerHTML=`
-    <strong>Départ :</strong> ${course.depart}<br>
-    <strong>Arrivée :</strong> ${course.arrivee}<br>
-    <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
-    <strong>Prix :</strong> ${course.prix} € ${course.majoration!=='Aucune'?`(${course.majoration})`:''}<br>
-    <strong>Heure :</strong> ${course.heure}
+if (course && course.depart) {
+  recapEl.innerHTML = `
+    <div><strong>Départ :</strong> ${course.depart}</div>
+    <div><strong>Arrivée :</strong> ${course.arrivee}</div>
+    <div><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</div>
+    <div><strong>Prix :</strong> ${course.prix} €</div>
+    <div><strong>Heure :</strong> ${course.heure}</div>
   `;
+} else {
+  recapEl.innerHTML = '<div>Aucune course trouvée — retour à la page précédente.</div>';
 }
 
-// Formulaire confirmation
-form.addEventListener("submit", async e=>{
+const form = document.getElementById('confirmForm');
+const messageFinal = document.getElementById('messageFinal');
+const submitBtn = document.getElementById('submitBtn');
+
+form.addEventListener('submit', async e => {
   e.preventDefault();
-  const nom = document.getElementById("nom").value.trim();
-  const prenom = document.getElementById("prenom").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const email = document.getElementById("email").value.trim();
 
-  if(!nom || !prenom || !email){ alert("Nom, prénom et email obligatoires"); return; }
+  const nom = document.getElementById('nom').value.trim();
+  const prenom = document.getElementById('prenom').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+
+  if (!nom || !prenom || !email) {
+    alert("Nom, prénom et email sont obligatoires");
+    return;
+  }
+
   const phoneRegex = /^\+33[1-9]\d{8}$/;
-  if(!phoneRegex.test(phone)){ alert("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
+  if (!phoneRegex.test(phone)) {
+    alert("Numéro de téléphone invalide. Format attendu : +33XXXXXXXXX");
+    return;
+  }
 
-  try{
-    // --- Envoi Email au client ---
-    await fetch("/api/send-email",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Envoi en cours...";
+
+  const chauffeurEmail = "selimmeguennitani@gmail.com";
+  const chauffeurPhone = "+33763133397";
+
+  try {
+    // email client
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         to: email,
         subject: "Confirmation de votre course",
         html: `
-          Bonjour ${prenom} ${nom},<br>
-          Votre course de ${course.depart} à ${course.arrivee} est confirmée.<br>
-          Distance : ${course.distanceKm.toFixed(1)} km<br>
-          Prix : ${course.prix} € ${course.majoration!=='Aucune'?`(${course.majoration})`:''}<br>
-          Heure : ${course.heure}
+          <p>Bonjour ${prenom} ${nom},</p>
+          <p>Votre course de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> est confirmée.</p>
+          <p>Distance : ${course.distanceKm.toFixed(1)} km<br>
+          Prix : <strong>${course.prix} €</strong><br>
+          Heure : ${course.heure}</p>
+          <p>Merci de votre confiance.</p>
         `
       })
     });
 
-    // --- Envoi SMS au client ---
-    await fetch("/api/send-sms",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+    // sms client
+    await fetch("/api/send-sms", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         to: phone,
-        message: `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`
+        message: `Bonjour ${prenom}, votre course ${course.depart} → ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`
       })
     });
 
-    // --- Envoi Email au chauffeur ---
-    await fetch("/api/send-email",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+    // email chauffeur
+    await fetch("/api/send-email", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        to: "chauffeur@chauffeur-prive.fr", // remplacer par la vraie variable ou .env
-        subject: `Nouvelle course acceptée : ${course.depart} → ${course.arrivee}`,
+        to: chauffeurEmail,
+        subject: `Nouvelle course : ${course.depart} → ${course.arrivee}`,
         html: `
-          Le client ${prenom} ${nom} a accepté la course.<br>
-          Téléphone : ${phone}<br>
-          Email : ${email}<br>
-          Distance : ${course.distanceKm.toFixed(1)} km<br>
+          <p>Nouvelle course acceptée par ${prenom} ${nom}.</p>
+          <p>Téléphone : ${phone}<br>Email : ${email}</p>
+          <p>Distance : ${course.distanceKm.toFixed(1)} km<br>
           Prix : ${course.prix} €<br>
-          Heure : ${course.heure}
+          Heure : ${course.heure}</p>
         `
       })
     });
 
-    // --- Envoi SMS au chauffeur ---
-    await fetch("/api/send-sms",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+    // sms chauffeur
+    await fetch("/api/send-sms", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        to: "+33XXXXXXXXX", // numéro chauffeur
-        message: `Nouvelle course : ${course.depart} → ${course.arrivee}, Client: ${prenom} ${nom}, Tel: ${phone}, Prix: ${course.prix} €`
+        to: chauffeurPhone,
+        message: `Nouvelle course : ${course.depart} → ${course.arrivee}. Client: ${prenom} ${nom}, Tel: ${phone}. Prix: ${course.prix} €`
       })
     });
 
-    messageFinal.innerText=
+    messageFinal.innerText =
 `✅ Confirmation de réservation !
 SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception)
 Un chauffeur vous contactera dans un instant 📱
 Restez proche de votre téléphone.`;
-    messageFinal.style.display="block";
-    form.style.display="none";
 
-  }catch(err){
-    console.error("Erreur confirmation :", err);
-    alert("Une erreur est survenue lors de l'envoi, vérifiez le numéro et l'email, puis réessayez.");
+    messageFinal.style.display = "block";
+    form.style.display = "none";
+
+  } catch (err) {
+    console.error(err);
+    alert("Erreur lors de l'envoi. Vérifiez la console serveur ou les clés API.");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Accepter le devis";
   }
 });
 </script>
