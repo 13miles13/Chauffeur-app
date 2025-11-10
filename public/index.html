@@ -1,181 +1,167 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Réservation Chauffeur</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
-    .container {
-      max-width: 480px; margin: 40px auto; background: #fff;
-      border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h1 { text-align: center; color: #333; }
-    label { font-weight: bold; margin-top: 10px; display: block; }
-    input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; }
-    .input-wrapper { position: relative; }
-    button {
-      width: 100%; padding: 12px; margin-top: 20px; border: none;
-      border-radius: 8px; background-color: #007bff; color: white;
-      font-size: 16px; cursor: pointer;
-    }
-    button:hover { background-color: #0056b3; }
-    .result { margin-top: 20px; text-align: center; }
-
-    .autocomplete-items {
-  position: absolute;
-  background: white;
-  border: 1px solid #ccc;
-  border-top: none;
-  z-index: 99;
-  max-height: 200px;
-  overflow-y: auto;
-  width: 100%;
-}
-
-.autocomplete-item {
-  padding: 6px 8px;
-  cursor: pointer;
-  font-size: 13px; /* ✅ Taille de texte réduite */
-  line-height: 1.2;
-}
-
-.autocomplete-item:hover {
-  background-color: #f0f0f0;
-}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chauffeur Privé</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; color:#333; }
+.container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+h1 { text-align:center; color:#2c3e50; }
+label { font-weight:bold; display:block; margin-top:10px; }
+input, select { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
+button { width:100%; padding:12px; background-color:#007bff; color:white; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-size:16px; }
+button:hover { background-color:#0056b3; }
+.result { margin-top:20px; text-align:center; }
+.autocomplete-items { position:absolute; background:white; border:1px solid #ccc; border-top:none; z-index:99; max-height:200px; overflow-y:auto; width:100%; }
+.autocomplete-item { padding:6px 8px; cursor:pointer; font-size:13px; line-height:1.2; }
+.autocomplete-item:hover { background-color:#f0f0f0; }
+.hidden { display:none; }
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Simulateur Chauffeur</h1>
-    <form id="formCourse">
-      <label>Adresse de départ :</label>
-      <div class="input-wrapper">
-        <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
-      </div>
-      <label>Adresse d’arrivée :</label>
-      <div class="input-wrapper">
-        <input id="arrivee" type="text" placeholder="Ex: Aéroport Marseille" autocomplete="off" />
-      </div>
-      <button type="submit">Calculer le prix</button>
-    </form>
-    <div id="result" class="result"></div>
-  </div>
+<div class="container">
+<h1>Simulateur Chauffeur</h1>
 
-  <script>
-  // === Boîte de debug (mobile-friendly) ===
-  function showDebug(msg) {
-    let debugBox = document.getElementById("debugBox");
-    if (!debugBox) {
-      debugBox = document.createElement("div");
-      debugBox.id = "debugBox";
-      Object.assign(debugBox.style, {
-        position: "fixed", bottom: "0", left: "0", width: "100%",
-        maxHeight: "40vh", overflowY: "auto", background: "rgba(0,0,0,0.8)",
-        color: "#0f0", fontSize: "12px", padding: "8px", zIndex: "9999", fontFamily: "monospace"
-      });
-      document.body.appendChild(debugBox);
-    }
-    const time = new Date().toLocaleTimeString();
-    const line = document.createElement("div");
-    line.textContent = `[${time}] ${msg}`;
-    debugBox.appendChild(line);
-    debugBox.scrollTop = debugBox.scrollHeight;
+<form id="formCourse">
+<label>Adresse de départ :</label>
+<input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
+
+<label>Adresse d’arrivée :</label>
+<input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
+
+<label><input type="checkbox" id="nowCheckbox" checked /> Réserver tout de suite</label>
+
+<div id="datetimeFields" class="hidden">
+  <label>Date :</label>
+  <input type="date" id="date">
+
+  <label>Heure :</label>
+  <input type="time" id="time">
+</div>
+
+<button type="submit">Calculer le prix</button>
+</form>
+
+<div class="result" id="result"></div>
+</div>
+
+<script>
+// === Affichage des champs date/heure selon checkbox ===
+const nowCheckbox = document.getElementById("nowCheckbox");
+const datetimeFields = document.getElementById("datetimeFields");
+
+nowCheckbox.addEventListener("change", ()=>{
+  if(nowCheckbox.checked){
+    datetimeFields.classList.add("hidden");
+  }else{
+    datetimeFields.classList.remove("hidden");
   }
+});
 
-  // === Autocomplétion ===
-  async function autocomplete(inputId) {
-    const input = document.getElementById(inputId);
-    const listId = inputId + "-list";
-    let list = document.createElement("div");
-    list.setAttribute("id", listId);
-    list.setAttribute("class", "autocomplete-items");
-    input.parentNode.appendChild(list);
+// === Autocomplétion Nominatim ===
+async function autocomplete(inputId){
+  const input = document.getElementById(inputId);
+  const listId = inputId+"-list";
+  let list = document.createElement("div");
+  list.id=listId;
+  list.classList.add("autocomplete-items");
+  input.parentNode.appendChild(list);
 
-    input.addEventListener("input", async function() {
-      const val = this.value;
-      list.innerHTML = "";
-      if (!val || val.length < 3) return;
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
-        const data = await res.json();
-        data.forEach(place => {
-          const item = document.createElement("div");
-          item.textContent = place.display_name;
-          item.classList.add("autocomplete-item");
-          item.addEventListener("click", () => {
-            input.value = place.display_name;
-            list.innerHTML = "";
-          });
-          list.appendChild(item);
-        });
-      } catch (e) {
-        showDebug("Erreur autocomplétion: " + e.message);
-      }
-    });
-  }
-  autocomplete("depart");
-  autocomplete("arrivee");
-
-  // === Géocodage ===
-  async function getCoordinates(address) {
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+  input.addEventListener("input", async function(){
+    const val=this.value;
+    list.innerHTML="";
+    if(!val || val.length<3) return;
+    try{
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
       const data = await res.json();
-      if (!data[0]) return null;
-      return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-    } catch (e) {
-      showDebug("Erreur coordonnées: " + e.message);
-      return null;
-    }
-  }
-
-  // === Distance (Haversine) ===
-  function calcDistanceKm([lon1, lat1], [lon2, lat2]) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
-  }
-
-  // === Soumission du formulaire ===
-  document.getElementById("formCourse").addEventListener("submit", async e => {
-    e.preventDefault(); // Empêche le rechargement de la page
-
-    const depart = document.getElementById("depart").value.trim();
-    const arrivee = document.getElementById("arrivee").value.trim();
-
-    if (!depart || !arrivee) {
-      alert("Merci de remplir les deux adresses.");
-      return;
-    }
-
-    document.getElementById("result").textContent = "Calcul en cours...";
-
-    const coordDepart = await getCoordinates(depart);
-    const coordArrivee = await getCoordinates(arrivee);
-
-    if (!coordDepart || !coordArrivee) {
-      document.getElementById("result").textContent = "Adresses introuvables.";
-      return;
-    }
-
-    const distanceKm = calcDistanceKm(coordDepart, coordArrivee);
-    const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
-
-    // ✅ Sauvegarde dans le navigateur (sessionStorage)
-    sessionStorage.setItem("course", JSON.stringify({
-      depart,
-      arrivee,
-      distanceKm,
-      prix
-    }));
-
-    // ✅ Redirection vers la page de confirmation
-    window.location.href = "confirmation.html";
+      data.forEach(place=>{
+        const item=document.createElement("div");
+        item.textContent=place.display_name;
+        item.classList.add("autocomplete-item");
+        item.addEventListener("click", ()=>{
+          input.value=place.display_name;
+          list.innerHTML="";
+        });
+        list.appendChild(item);
+      });
+    }catch(e){ console.error("Erreur autocomplétion:", e); }
   });
-  </script>
+}
+autocomplete("depart");
+autocomplete("arrivee");
+
+// === Géocodage ===
+async function getCoordinates(address){
+  try{
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await res.json();
+    if(!data[0]) return null;
+    return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+  }catch(e){ console.error("Erreur coordonnées:", e); return null; }
+}
+
+// === Distance Haversine ===
+function calcDistanceKm([lon1, lat1],[lon2, lat2]){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+  return R*c;
+}
+
+// === Formulaire ===
+document.getElementById("formCourse").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const depart = document.getElementById("depart").value.trim();
+  const arrivee = document.getElementById("arrivee").value.trim();
+
+  if(!depart || !arrivee){ alert("Merci de remplir les deux adresses."); return; }
+
+  document.getElementById("result").textContent="Calcul en cours...";
+
+  const coordDepart = await getCoordinates(depart);
+  const coordArrivee = await getCoordinates(arrivee);
+
+  if(!coordDepart || !coordArrivee){ document.getElementById("result").textContent="Adresses introuvables."; return; }
+
+  let distanceKm = calcDistanceKm(coordDepart, coordArrivee);
+
+  // === Calcul prix avec majoration selon heure ===
+  let prixBase = Math.max(10,(distanceKm*1.8).toFixed(2));
+  let majoration = 0;
+
+  let now = new Date();
+  if(!nowCheckbox.checked){
+    const dateInput = document.getElementById("date").value;
+    const timeInput = document.getElementById("time").value;
+    if(dateInput && timeInput){
+      now = new Date(`${dateInput}T${timeInput}`);
+    }
+  }
+
+  const hour = now.getHours();
+  // Heures de pointe
+  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
+  // Nuit
+  if(hour>=22 || hour<6) majoration=0.3;
+
+  const prixFinal = (prixBase*(1+majoration)).toFixed(2);
+
+  sessionStorage.setItem("course", JSON.stringify({
+    depart, arrivee, distanceKm, prix: prixFinal, majoration: majoration ? `+${majoration*100}%` : 'Aucune'
+  }));
+
+  // Affichage rapide
+  document.getElementById("result").innerHTML = `
+    Distance : ${distanceKm.toFixed(1)} km<br>
+    Prix estimé : <strong>${prixFinal} €</strong> ${majoration ? `(majoration ${majoration*100}%)` : ''}
+  `;
+
+  // Redirection vers confirmation
+  setTimeout(()=>window.location.href="confirmation.html", 1000);
+});
+</script>
 </body>
 </html>
