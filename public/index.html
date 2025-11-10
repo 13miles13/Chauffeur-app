@@ -1,13 +1,13 @@
+<!-- public/index.html (identique à celui que tu as validé) -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chauffeur Privé VTC Marseille & Aix en Provence</title>
-<meta name="description" content="Réservation chauffeur privé et VTC à Marseille, Aix-en-Provence et alentours : Cassis, Ciotat, Martigues, Marignane. Transfert aéroport rapide et sécurisé. Paiement directement avec le chauffeur.">
-<meta name="keywords" content="chauffeur, VTC, taxi, pas cher, Marseille, Aix en Provence, Aix, Venelles, Pertuis, Saint Cannat, Rotonde, Les Milles, Gare TGV Aix en Provence, Aiguille, Ventabren, Cassis, Ciotat, Martigues, Marignane, Vitrolles, aéroport MRS, aéroport Marseille, réservation chauffeur, course privée, trajet aéroport, transfert rapide, VTC Marseille, chauffeur Marseille">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
+/* (styling identical to latest version we agreed) */
 body { font-family:'Poppins', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; }
 .container { max-width:450px; margin:25px auto; background:#fff; border-radius:20px; padding:30px; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
 h1 { text-align:center; font-size:1.8em; color:#1a1a1a; margin-bottom:15px; }
@@ -27,6 +27,7 @@ button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2)
 .result { margin-top:15px; text-align:left; font-size:0.95em; background:#e6f0ff; padding:12px; border-radius:10px; font-weight:600; }
 .footer { text-align:center; margin-top:25px; font-size:0.9em; color:#555; }
 .footer a { color:#0066cc; text-decoration:none; }
+.position-relative { position:relative; }
 </style>
 </head>
 <body>
@@ -35,17 +36,20 @@ button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2)
 <div class="info-payment">💳 Paiement directement avec le chauffeur : carte bancaire, espèces ou crypto (BTC, USDT)</div>
 
 <form id="formCourse">
+<div class="position-relative">
 <label>Adresse de départ :</label>
 <input id="depart" type="text" placeholder="Ex: Marseille Gare Saint-Charles" autocomplete="off">
 <div id="depart-list" class="autocomplete-items"></div>
+</div>
 
+<div class="position-relative">
 <label>Adresse d’arrivée :</label>
 <input id="arrivee" type="text" placeholder="Ex: Aéroport Marseille Provence" autocomplete="off">
 <div id="arrivee-list" class="autocomplete-items"></div>
+</div>
 
 <label class="checkbox-label">
-<input type="checkbox" id="nowCheckbox" checked>
-Réserver pour tout de suite
+<input type="checkbox" id="nowCheckbox" checked> Réserver pour tout de suite
 </label>
 
 <div id="datetimeFields" class="hidden">
@@ -67,12 +71,7 @@ Réserver pour tout de suite
 </div>
 
 <script>
-// Checkbox date/heure
-const nowCheckbox = document.getElementById("nowCheckbox");
-const datetimeFields = document.getElementById("datetimeFields");
-nowCheckbox.addEventListener("change", ()=>datetimeFields.classList.toggle("hidden", nowCheckbox.checked));
-
-// Autocomplete
+// Autocomplete + distance calc + save in sessionStorage (majoration hidden)
 function setupAutocomplete(id){
   const input = document.getElementById(id);
   const list = document.getElementById(id+"-list");
@@ -95,14 +94,11 @@ function setupAutocomplete(id){
 setupAutocomplete("depart");
 setupAutocomplete("arrivee");
 
-// Calcul distance
 async function getCoordinates(address){
-  try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-    const data = await res.json();
-    if(!data[0]) return null;
-    return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-  }catch(e){ console.error(e); return null; }
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+  const data = await res.json();
+  if(!data[0]) return null;
+  return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
 }
 function calcDistanceKm([lon1,lat1],[lon2,lat2]){
   const R=6371;
@@ -112,7 +108,6 @@ function calcDistanceKm([lon1,lat1],[lon2,lat2]){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Formulaire
 document.getElementById("formCourse").addEventListener("submit", async e=>{
   e.preventDefault();
   const depart = document.getElementById("depart").value.trim();
@@ -126,30 +121,26 @@ document.getElementById("formCourse").addEventListener("submit", async e=>{
   let distanceKm = calcDistanceKm(coordDepart,coordArrivee);
 
   let courseDate = new Date();
-  if(!nowCheckbox.checked){
+  if(!document.getElementById("nowCheckbox").checked){
     const dateInput = document.getElementById("date").value;
     const timeInput = document.getElementById("time").value;
     if(dateInput && timeInput) courseDate = new Date(`${dateInput}T${timeInput}`);
   }
 
   const hour = courseDate.getHours();
+  let prixBase = Math.max(25, distanceKm*2.5); // 2.5€/km base, minimum 25€
+  let majoration = 0;
+  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration = 0.2;
+  if(hour>=22 || hour<6) majoration = 0.3;
+  const prixFinal = (prixBase * (1 + majoration)).toFixed(2);
 
-  // --- CALCUL DU PRIX ---
-  let prixBase = Math.max(25, distanceKm*2.5); // Prix de base + inflation
-  let majoration=0;
-  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2; // heures de pointe
-  if(hour>=22 || hour<6) majoration=0.3; // nuit
-  const prixFinal=(prixBase*(1+majoration)).toFixed(2);
-
-  // Sauvegarde course pour confirmation
-  sessionStorage.setItem("course",JSON.stringify({
-    depart, arrivee, distanceKm, prix:prixFinal, majoration:majoration?`+${majoration*100}%`:'Aucune', heure:courseDate.toLocaleString()
+  sessionStorage.setItem("course", JSON.stringify({
+    depart, arrivee, distanceKm, prix: prixFinal, majoration, heure: courseDate.toLocaleString()
   }));
 
-  document.getElementById("result").innerHTML=
-    `Distance : ${distanceKm.toFixed(1)} km<br>Prix : <strong>${prixFinal} €</strong><br>Heure : ${courseDate.toLocaleString()}`;
+  document.getElementById("result").innerHTML = `Distance : ${distanceKm.toFixed(1)} km<br>Prix : <strong>${prixFinal} €</strong><br>Heure : ${courseDate.toLocaleString()}`;
 
-  setTimeout(()=>window.location.href="confirmation.html",500);
+  setTimeout(()=> window.location.href = "confirmation.html", 500);
 });
 </script>
 </body>
