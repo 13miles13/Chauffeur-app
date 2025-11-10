@@ -52,11 +52,7 @@ const nowCheckbox = document.getElementById("nowCheckbox");
 const datetimeFields = document.getElementById("datetimeFields");
 
 nowCheckbox.addEventListener("change", ()=>{
-  if(nowCheckbox.checked){
-    datetimeFields.classList.add("hidden");
-  }else{
-    datetimeFields.classList.remove("hidden");
-  }
+  datetimeFields.classList.toggle("hidden", nowCheckbox.checked);
 });
 
 // === Autocomplétion Nominatim ===
@@ -128,35 +124,38 @@ document.getElementById("formCourse").addEventListener("submit", async e=>{
 
   let distanceKm = calcDistanceKm(coordDepart, coordArrivee);
 
-  // === Calcul prix avec majoration selon heure ===
-  let prixBase = Math.max(10,(distanceKm*1.8).toFixed(2));
-  let majoration = 0;
-
-  let now = new Date();
+  // === Heure de la course ===
+  let courseDate = new Date();
   if(!nowCheckbox.checked){
     const dateInput = document.getElementById("date").value;
     const timeInput = document.getElementById("time").value;
-    if(dateInput && timeInput){
-      now = new Date(`${dateInput}T${timeInput}`);
-    }
+    if(dateInput && timeInput) courseDate = new Date(`${dateInput}T${timeInput}`);
   }
 
-  const hour = now.getHours();
-  // Heures de pointe
-  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
-  // Nuit
-  if(hour>=22 || hour<6) majoration=0.3;
+  const hour = courseDate.getHours();
 
+  // === Calcul prix avec majoration selon heure ===
+  let prixBase = Math.max(10,(distanceKm*1.8).toFixed(2));
+  let majoration = 0;
+  if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
+  if(hour>=22 || hour<6) majoration=0.3;
   const prixFinal = (prixBase*(1+majoration)).toFixed(2);
 
+  // === Sauvegarde sessionStorage ===
   sessionStorage.setItem("course", JSON.stringify({
-    depart, arrivee, distanceKm, prix: prixFinal, majoration: majoration ? `+${majoration*100}%` : 'Aucune'
+    depart,
+    arrivee,
+    distanceKm,
+    prix: prixFinal,
+    majoration: majoration ? `+${majoration*100}%` : 'Aucune',
+    heure: courseDate.toLocaleString()
   }));
 
   // Affichage rapide
   document.getElementById("result").innerHTML = `
     Distance : ${distanceKm.toFixed(1)} km<br>
-    Prix estimé : <strong>${prixFinal} €</strong> ${majoration ? `(majoration ${majoration*100}%)` : ''}
+    Prix estimé : <strong>${prixFinal} €</strong> ${majoration ? `(majoration ${majoration*100}%)` : ''}<br>
+    Heure de la course : ${courseDate.toLocaleString()}
   `;
 
   // Redirection vers confirmation
