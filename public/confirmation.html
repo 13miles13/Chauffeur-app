@@ -171,8 +171,8 @@ form.addEventListener("submit", async e=>{
     const smsData = await smsRes.json();
     console.log("SMS envoyé :", smsData);
 
+    messageFinal.innerHTML="✅ confirmation de reservation ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
     messageFinal.style.display="block";
-    messageFinal.innerHTML="✅ accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
     form.style.display="none";
 
   }catch(err){
