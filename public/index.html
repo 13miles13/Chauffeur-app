@@ -1,48 +1,52 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Chauffeur Privé VTC Marseille, Aix-en-Provence – Réservation</title>
-<meta name="description" content="Réservez votre chauffeur privé, chauffeur ou VTC à Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille(s), Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane. Déplacement rapide vers l'aéroport Marseille MRS, gare ou ville.">
-<meta name="keywords" content="chauffeur privé, chauffeur, VTC, taxi pas cher, Marseille, Aix-en-Provence, Venelles, Pertuis, Saint-Cannat, Rotonde, Les Milles, gare TGV Aix-en-Provence, Aiguille, Aiguilles, Ventabren, Vitrolles, Cassis, La Ciotat, Martigues, Marignane, aéroport Marseille, MRS, transfert gare, réservation taxi, VTC Marseille, course rapide, réservation chauffeur, prix course, transport privé, service VTC, taxi Aix, taxi Cassis, taxi Ciotat, taxi Marignane, taxi Martigues, transfert aéroport MRS, réservation en ligne">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chauffeur Privé VTC Marseille & Aix en Provence</title>
+<meta name="description" content="Réservation chauffeur privé et VTC à Marseille, Aix-en-Provence et alentours : Cassis, Ciotat, Martigues, Marignane. Transfert aéroport rapide et sécurisé.">
+<meta name="keywords" content="chauffeur, VTC, taxi, pas cher, Marseille, Aix en Provence, Aix, Venelles, Pertuis, Saint Cannat, Rotonde, Les Milles, Gare TGV Aix en Provence, Aiguille, Ventabren, Cassis, Ciotat, Martigues, Marignane, Vitrolles, aéroport MRS, aéroport Marseille, réservation chauffeur, course privée, trajet aéroport, transfert rapide, VTC Marseille, chauffeur Marseille">
+<meta name="robots" content="index, follow">
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f5f5f5; color:#333; }
-.container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
-h1 { text-align:center; color:#2c3e50; }
-label { font-weight:bold; display:block; margin-top:10px; }
-input, select { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
-button { width:100%; padding:12px; background-color:#007bff; color:white; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-size:16px; }
+.container { max-width:400px; margin:20px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+h1 { text-align:center; font-size:1.5em; color:#2c3e50; margin-bottom:15px; }
+label { display:block; font-weight:bold; margin-top:10px; font-size:0.95em; }
+input, select, button { width:100%; padding:10px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; }
+button { background-color:#007bff; color:white; border:none; margin-top:15px; cursor:pointer; font-size:1em; border-radius:6px; }
 button:hover { background-color:#0056b3; }
-.result { margin-top:20px; text-align:center; }
-.autocomplete-items { position:absolute; background:white; border:1px solid #ccc; border-top:none; z-index:99; max-height:200px; overflow-y:auto; width:100%; }
-.autocomplete-item { padding:6px 8px; cursor:pointer; font-size:13px; line-height:1.2; }
-.autocomplete-item:hover { background-color:#f0f0f0; }
+.autocomplete-items { position:absolute; background:white; border:1px solid #ccc; border-top:none; z-index:99; max-height:150px; overflow-y:auto; width:100%; font-size:0.85em; }
+.autocomplete-item { padding:5px 8px; cursor:pointer; line-height:1.2; }
+.autocomplete-item:hover { background:#f0f0f0; }
+.checkbox-label { display:flex; align-items:center; margin-top:10px; cursor:pointer; font-size:0.9em; }
+.checkbox-label input { margin-right:8px; transform:scale(1.2); }
+#datetimeFields { margin-top:5px; }
 .hidden { display:none; }
-.checkbox-label { display:flex; align-items:center; margin-top:15px; cursor:pointer; }
-.checkbox-label input { margin-right:10px; }
+.result { margin-top:10px; text-align:center; font-size:0.9em; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Simulateur Chauffeur</h1>
+<h1>Simulateur Chauffeur Privé</h1>
 
 <form id="formCourse">
 <label>Adresse de départ :</label>
-<input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
+<input id="depart" type="text" placeholder="Ex: Marseille Gare Saint-Charles" autocomplete="off">
 <div id="depart-list" class="autocomplete-items"></div>
 
 <label>Adresse d’arrivée :</label>
-<input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
+<input id="arrivee" type="text" placeholder="Ex: Aéroport Marseille Provence" autocomplete="off">
 <div id="arrivee-list" class="autocomplete-items"></div>
 
-<label class="checkbox-label"><input type="checkbox" id="nowCheckbox" checked />Réserver pour tout de suite</label>
+<label class="checkbox-label">
+<input type="checkbox" id="nowCheckbox" checked>Réserver pour tout de suite
+</label>
 
 <div id="datetimeFields" class="hidden">
-  <label>Date :</label>
-  <input type="date" id="date">
-  <label>Heure :</label>
-  <input type="time" id="time">
+<label>Date :</label>
+<input type="date" id="date">
+<label>Heure :</label>
+<input type="time" id="time">
 </div>
 
 <button type="submit">Calculer le prix</button>
@@ -52,79 +56,64 @@ button:hover { background-color:#0056b3; }
 </div>
 
 <script>
-// === Checkbox pour afficher date/heure ===
+// Gestion checkbox date/heure
 const nowCheckbox = document.getElementById("nowCheckbox");
 const datetimeFields = document.getElementById("datetimeFields");
-nowCheckbox.addEventListener("change", ()=>{
-  datetimeFields.classList.toggle("hidden", nowCheckbox.checked);
-});
+nowCheckbox.addEventListener("change", ()=>datetimeFields.classList.toggle("hidden", nowCheckbox.checked));
 
-// === Autocomplétion Nominatim ===
-function setupAutocomplete(inputId){
-  const input = document.getElementById(inputId);
-  const list = document.getElementById(inputId+"-list");
-
+// Autocomplétion Nominatim
+function setupAutocomplete(id){
+  const input = document.getElementById(id);
+  const list = document.getElementById(id+"-list");
   input.addEventListener("input", async function(){
-    const val = this.value;
     list.innerHTML="";
-    if(!val || val.length<3) return;
+    if(this.value.length<3) return;
     try{
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(this.value)}&limit=5`);
       const data = await res.json();
       data.forEach(place=>{
-        const item = document.createElement("div");
-        item.textContent = place.display_name;
-        item.classList.add("autocomplete-item");
-        item.addEventListener("click", ()=>{
-          input.value = place.display_name;
-          list.innerHTML="";
-        });
-        list.appendChild(item);
+        const div = document.createElement("div");
+        div.textContent = place.display_name;
+        div.classList.add("autocomplete-item");
+        div.addEventListener("click", ()=>{ input.value=place.display_name; list.innerHTML=""; });
+        list.appendChild(div);
       });
-    }catch(e){ console.error("Erreur autocomplétion:", e); }
+    }catch(e){ console.error(e); }
   });
 }
 setupAutocomplete("depart");
 setupAutocomplete("arrivee");
 
-// === Géocodage ===
+// Géocodage et distance
 async function getCoordinates(address){
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
     const data = await res.json();
     if(!data[0]) return null;
     return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-  }catch(e){ console.error("Erreur coordonnées:", e); return null; }
+  }catch(e){ console.error(e); return null; }
 }
-
-// === Distance Haversine ===
-function calcDistanceKm([lon1, lat1],[lon2, lat2]){
+function calcDistanceKm([lon1,lat1],[lon2,lat2]){
   const R=6371;
   const dLat=(lat2-lat1)*Math.PI/180;
   const dLon=(lon2-lon1)*Math.PI/180;
   const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-  const c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  return R*c;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// === Formulaire ===
+// Formulaire calcul prix
 document.getElementById("formCourse").addEventListener("submit", async e=>{
   e.preventDefault();
   const depart = document.getElementById("depart").value.trim();
   const arrivee = document.getElementById("arrivee").value.trim();
-
-  if(!depart || !arrivee){ alert("Merci de remplir les deux adresses."); return; }
-
-  document.getElementById("result").textContent="Calcul en cours...";
+  if(!depart||!arrivee){ alert("Merci de remplir les deux adresses."); return; }
 
   const coordDepart = await getCoordinates(depart);
   const coordArrivee = await getCoordinates(arrivee);
+  if(!coordDepart||!coordArrivee){ alert("Adresses introuvables"); return; }
 
-  if(!coordDepart || !coordArrivee){ document.getElementById("result").textContent="Adresses introuvables."; return; }
+  let distanceKm = calcDistanceKm(coordDepart,coordArrivee);
 
-  let distanceKm = calcDistanceKm(coordDepart, coordArrivee);
-
-  // === Heure de la course ===
   let courseDate = new Date();
   if(!nowCheckbox.checked){
     const dateInput = document.getElementById("date").value;
@@ -133,33 +122,19 @@ document.getElementById("formCourse").addEventListener("submit", async e=>{
   }
 
   const hour = courseDate.getHours();
-
-  // === Calcul prix avec majoration et minimum 25€ ===
   let prixBase = Math.max(25, distanceKm*1.8);
-  let majoration = 0;
+  let majoration=0;
   if((hour>=7 && hour<9)||(hour>=17 && hour<19)) majoration=0.2;
   if(hour>=22 || hour<6) majoration=0.3;
-  const prixFinal = (prixBase*(1+majoration)).toFixed(2);
+  const prixFinal=(prixBase*(1+majoration)).toFixed(2);
 
-  // Sauvegarde pour page confirmation
-  sessionStorage.setItem("course", JSON.stringify({
-    depart,
-    arrivee,
-    distanceKm,
-    prix: prixFinal,
-    majoration: majoration ? `+${majoration*100}%` : 'Aucune',
-    heure: courseDate.toLocaleString()
+  sessionStorage.setItem("course",JSON.stringify({
+    depart, arrivee, distanceKm, prix:prixFinal, majoration:majoration?`+${majoration*100}%`:'Aucune', heure:courseDate.toLocaleString()
   }));
 
-  // Affichage rapide
-  document.getElementById("result").innerHTML = `
-    Distance : ${distanceKm.toFixed(1)} km<br>
-    Prix estimé : <strong>${prixFinal} €</strong> ${majoration ? `(majoration ${majoration*100}%)` : ''}<br>
-    Heure de la course : ${courseDate.toLocaleString()}
-  `;
+  document.getElementById("result").innerHTML=`Distance : ${distanceKm.toFixed(1)} km<br>Prix : <strong>${prixFinal} €</strong> ${majoration?`(majoration ${majoration*100}%)`:''}<br>Heure : ${courseDate.toLocaleString()}`;
 
-  // Redirection vers confirmation
-  setTimeout(()=>window.location.href="confirmation.html", 1000);
+  setTimeout(()=>window.location.href="confirmation.html",500);
 });
 </script>
 </body>
