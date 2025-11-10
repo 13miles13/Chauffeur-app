@@ -13,7 +13,21 @@
     button { width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-size:16px; }
     button:hover { background:#0056b3; }
     .result { margin-top:20px; text-align:center; }
-    .autocomplete-items { position:absolute; background:#fff; border:1px solid #ccc; border-top:none; z-index:99; max-height:200px; overflow-y:auto; width:100%; }
+
+    /* === AUTOCOMPLETE === */
+    .input-container { position: relative; } /* important pour la position de la liste */
+    .autocomplete-items {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background:#fff;
+      border:1px solid #ccc;
+      border-top:none;
+      z-index:99;
+      max-height:200px;
+      overflow-y:auto;
+    }
     .autocomplete-item { padding:8px; cursor:pointer; }
     .autocomplete-item:hover { background:#f0f0f0; }
   </style>
@@ -24,10 +38,14 @@
 
     <form id="formCourse">
       <label>Adresse de départ :</label>
-      <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
+      <div class="input-container">
+        <input id="depart" type="text" placeholder="Ex: Paris Gare du Nord" autocomplete="off" />
+      </div>
 
       <label>Adresse d’arrivée :</label>
-      <input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
+      <div class="input-container">
+        <input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
+      </div>
 
       <label>Téléphone pour SMS :</label>
       <input id="phone" type="text" placeholder="+33xxxxxxxxx" />
@@ -42,92 +60,110 @@
   </div>
 
 <script>
-  // --- Autocomplete Nominatim ---
+  // === Autocomplete Nominatim ===
   async function autocomplete(inputId){
     const input = document.getElementById(inputId);
-    const listId = inputId+"-list";
+    const listId = inputId + "-list";
     let list = document.createElement("div");
     list.setAttribute("id", listId);
-    list.setAttribute("class","autocomplete-items");
+    list.setAttribute("class", "autocomplete-items");
     input.parentNode.appendChild(list);
 
     input.addEventListener("input", async function(){
-      const val=this.value; list.innerHTML="";
+      const val = this.value;
+      list.innerHTML = "";
       if(!val || val.length<3) return;
       try{
-        const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
-        const data=await res.json();
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+        const data = await res.json();
         data.forEach(place=>{
-          const item=document.createElement("div");
-          item.textContent=place.display_name;
+          const item = document.createElement("div");
+          item.textContent = place.display_name;
           item.classList.add("autocomplete-item");
-          item.addEventListener("click",()=>{
-            input.value=place.display_name; list.innerHTML="";
+          item.addEventListener("click", ()=>{
+            input.value = place.display_name;
+            list.innerHTML = "";
           });
           list.appendChild(item);
         });
-      }catch(e){console.error("Erreur autocomplete:",e);}
+      }catch(e){ console.error("Erreur autocomplete:", e); }
     });
   }
-  autocomplete("depart"); autocomplete("arrivee");
+  autocomplete("depart");
+  autocomplete("arrivee");
 
-  // --- Coordonnées ---
+  // === Coordonnées ===
   async function getCoordinates(address){
-    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-    const data=await res.json();
-    return data[0]?[parseFloat(data[0].lon),parseFloat(data[0].lat)]:null;
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data = await res.json();
+    return data[0] ? [parseFloat(data[0].lon), parseFloat(data[0].lat)] : null;
   }
 
-  // --- Distance ---
-  async function getDistanceKm(depart,arrivee){
-    const coordDepart=await getCoordinates(depart);
-    const coordArrivee=await getCoordinates(arrivee);
+  // === Distance via backend ===
+  async function getDistanceKm(depart, arrivee){
+    const coordDepart = await getCoordinates(depart);
+    const coordArrivee = await getCoordinates(arrivee);
     if(!coordDepart || !coordArrivee) throw new Error("Adresses invalides");
-    const res=await fetch("/api/distance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({coords:[coordDepart,coordArrivee]})});
-    const data=await res.json();
+    const res = await fetch("/api/distance", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ coords:[coordDepart,coordArrivee] })
+    });
+    const data = await res.json();
     return data?.routes?.[0]?.summary?.distance/1000 || null;
   }
 
-  // --- Envoi SMS ---
+  // === Envoi SMS ===
   async function sendSMS(to,message){
+    if(!to) return;
     try{
-      await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,message})});
-    }catch(e){console.error("Erreur SMS:",e);}
+      await fetch("/api/send-sms",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({to,message})
+      });
+    }catch(e){console.error("Erreur SMS:", e);}
   }
 
-  // --- Envoi Email ---
+  // === Envoi Email ===
   async function sendEmail(to,subject,html){
+    if(!to) return;
     try{
-      await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,subject,html})});
-    }catch(e){console.error("Erreur Email:",e);}
+      await fetch("/api/send-email",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({to,subject,html})
+      });
+    }catch(e){console.error("Erreur Email:", e);}
   }
 
-  // --- Formulaire ---
+  // === Formulaire ===
   document.getElementById("formCourse").addEventListener("submit", async e=>{
     e.preventDefault();
-    const depart=document.getElementById("depart").value.trim();
-    const arrivee=document.getElementById("arrivee").value.trim();
-    const phone=document.getElementById("phone").value.trim();
-    const email=document.getElementById("email").value.trim();
-    if(!depart||!arrivee) return alert("Merci de remplir les adresses");
-    document.getElementById("result").textContent="Calcul en cours...";
+    const depart = document.getElementById("depart").value.trim();
+    const arrivee = document.getElementById("arrivee").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const email = document.getElementById("email").value.trim();
+
+    if(!depart || !arrivee) return alert("Merci de remplir les adresses");
+    document.getElementById("result").textContent = "Calcul en cours...";
 
     try{
-      const distanceKm=await getDistanceKm(depart,arrivee);
+      const distanceKm = await getDistanceKm(depart,arrivee);
       if(!distanceKm) throw new Error("Erreur de calcul");
 
-      const prix=Math.max(10,(distanceKm*1.8).toFixed(2));
-      document.getElementById("result").innerHTML=`Distance : ${distanceKm.toFixed(1)} km<br>Prix estimé : <strong>${prix} €</strong>`;
+      const prix = Math.max(10,(distanceKm*1.8).toFixed(2));
+      document.getElementById("result").innerHTML = `Distance : ${distanceKm.toFixed(1)} km<br>Prix estimé : <strong>${prix} €</strong>`;
 
-      const msgSMS=`Votre course de ${depart} à ${arrivee} est estimée à ${prix} € (${distanceKm.toFixed(1)} km)`;
-      if(phone) sendSMS(phone,msgSMS);
+      const msgSMS = `Votre course de ${depart} à ${arrivee} est estimée à ${prix} € (${distanceKm.toFixed(1)} km)`;
+      sendSMS(phone,msgSMS);
 
-      const htmlEmail=`<p>Bonjour,</p><p>Votre course de <strong>${depart}</strong> à <strong>${arrivee}</strong> est estimée à <strong>${prix} €</strong> pour une distance de <strong>${distanceKm.toFixed(1)} km</strong>.</p>`;
-      if(email) sendEmail(email,"Confirmation course chauffeur",htmlEmail);
+      const htmlEmail = `<p>Bonjour,</p><p>Votre course de <strong>${depart}</strong> à <strong>${arrivee}</strong> est estimée à <strong>${prix} €</strong> pour une distance de <strong>${distanceKm.toFixed(1)} km</strong>.</p>`;
+      sendEmail(email,"Confirmation course chauffeur",htmlEmail);
 
     }catch(err){
       console.error(err);
-      document.getElementById("result").textContent="Erreur lors du calcul";
+      document.getElementById("result").textContent = "Erreur lors du calcul";
     }
   });
 </script>
