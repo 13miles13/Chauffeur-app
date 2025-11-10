@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation du devis</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
+    .container {
+      max-width: 480px; margin: 30px auto; background: #fff;
+      border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 { text-align: center; color: #333; }
+    .recap { margin-bottom: 20px; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; }
+    button {
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      background-color: #28a745; color: white; font-size: 16px; margin-top: 20px;
+    }
+    button:hover { background-color: #218838; }
+    .success { color: green; text-align: center; margin-top: 10px; }
+    .error { color: red; text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Confirmation du devis</h1>
+    <div class="recap" id="recap"></div>
+
+    <form id="confirmForm">
+      <label>Nom :</label>
+      <input id="nom" required />
+
+      <label>Prénom :</label>
+      <input id="prenom" required />
+
+      <label>Téléphone :</label>
+      <input id="tel" type="tel" placeholder="+33..." required pattern="^\\+?[0-9]{8,15}$" />
+
+      <label>Email :</label>
+      <input id="email" type="email" placeholder="exemple@mail.com" />
+
+      <button type="submit">Accepter le devis</button>
+    </form>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const course = JSON.parse(sessionStorage.getItem("course") || "{}");
+    if (!course.depart) window.location.href = "index.html";
+
+    document.getElementById("recap").innerHTML = `
+      <p><strong>Départ :</strong> ${course.depart}</p>
+      <p><strong>Arrivée :</strong> ${course.arrivee}</p>
+      <p><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</p>
+      <p><strong>Prix estimé :</strong> ${course.prix} €</p>
+    `;
+
+    document.getElementById("confirmForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const nom = document.getElementById("nom").value.trim();
+      const prenom = document.getElementById("prenom").value.trim();
+      const tel = document.getElementById("tel").value.trim();
+      const email = document.getElementById("email").value.trim();
+
+      if (!nom || !prenom || !tel) return alert("Merci de remplir tous les champs obligatoires.");
+
+      try {
+        const res = await fetch("/api/confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: tel, email,
+            depart: course.depart, arrivee: course.arrivee,
+            prix: course.prix, nom, prenom
+          })
+        });
+        if (res.ok) {
+          document.getElementById("status").innerHTML = `<p class="success">✅ Devis accepté ! Un chauffeur va vous contacter.</p>`;
+          sessionStorage.clear();
+        } else throw new Error("Erreur serveur");
+      } catch (err) {
+        document.getElementById("status").innerHTML = `<p class="error">❌ ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
