@@ -51,13 +51,24 @@
     const course = JSON.parse(sessionStorage.getItem("course") || "{}");
     if (!course.depart) window.location.href = "index.html";
 
+    // --- Calcul du temps estimé ---
+    // Hypothèse moyenne : 70 km/h sur route
+    const vitesseMoyenne = 70;
+    const tempsHeures = course.distanceKm / vitesseMoyenne;
+    const heures = Math.floor(tempsHeures);
+    const minutes = Math.round((tempsHeures - heures) * 60);
+    const duree = heures > 0 ? `${heures}h ${minutes} min` : `${minutes} min`;
+
+    // --- Affichage du récapitulatif ---
     document.getElementById("recap").innerHTML = `
       <p><strong>Départ :</strong> ${course.depart}</p>
       <p><strong>Arrivée :</strong> ${course.arrivee}</p>
       <p><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</p>
+      <p><strong>Durée estimée :</strong> ${duree}</p>
       <p><strong>Prix estimé :</strong> ${course.prix} €</p>
     `;
 
+    // --- Validation du devis ---
     document.getElementById("confirmForm").addEventListener("submit", async e => {
       e.preventDefault();
       const nom = document.getElementById("nom").value.trim();
@@ -74,7 +85,7 @@
           body: JSON.stringify({
             to: tel, email,
             depart: course.depart, arrivee: course.arrivee,
-            prix: course.prix, nom, prenom
+            prix: course.prix, nom, prenom, duree
           })
         });
         if (res.ok) {
