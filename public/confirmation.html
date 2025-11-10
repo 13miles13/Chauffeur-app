@@ -102,7 +102,7 @@ button:hover {
 <button type="submit">Accepter le devis</button>
 </form>
 
-<div id="messageFinal" class="result" style="display:none;"></div>
+<div id="messageFinal" class="result" style="display:none; white-space: pre-line;"></div>
 </div>
 
 <div class="footer">
@@ -140,8 +140,8 @@ form.addEventListener("submit", async e=>{
   if(!phoneRegex.test(phone)){ alert("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
 
   try{
-    // --- Envoi Email ---
-    const emailRes = await fetch("/api/send-email",{
+    // --- Envoi Email au client ---
+    await fetch("/api/send-email",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -156,11 +156,9 @@ form.addEventListener("submit", async e=>{
         `
       })
     });
-    const emailData = await emailRes.json();
-    console.log("Email envoyé :", emailData);
 
-    // --- Envoi SMS ---
-    const smsRes = await fetch("/api/send-sms",{
+    // --- Envoi SMS au client ---
+    await fetch("/api/send-sms",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -168,10 +166,40 @@ form.addEventListener("submit", async e=>{
         message: `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Prix: ${course.prix} €. Un chauffeur vous contactera bientôt.`
       })
     });
-    const smsData = await smsRes.json();
-    console.log("SMS envoyé :", smsData);
 
-    messageFinal.innerHTML="✅ confirmation de reservation ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
+    // --- Envoi Email au chauffeur ---
+    await fetch("/api/send-email",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: "chauffeur@chauffeur-prive.fr", // remplacer par la vraie variable ou .env
+        subject: `Nouvelle course acceptée : ${course.depart} → ${course.arrivee}`,
+        html: `
+          Le client ${prenom} ${nom} a accepté la course.<br>
+          Téléphone : ${phone}<br>
+          Email : ${email}<br>
+          Distance : ${course.distanceKm.toFixed(1)} km<br>
+          Prix : ${course.prix} €<br>
+          Heure : ${course.heure}
+        `
+      })
+    });
+
+    // --- Envoi SMS au chauffeur ---
+    await fetch("/api/send-sms",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: "+33XXXXXXXXX", // numéro chauffeur
+        message: `Nouvelle course : ${course.depart} → ${course.arrivee}, Client: ${prenom} ${nom}, Tel: ${phone}, Prix: ${course.prix} €`
+      })
+    });
+
+    messageFinal.innerText=
+`✅ Confirmation de réservation !
+SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception)
+Un chauffeur vous contactera dans un instant 📱
+Restez proche de votre téléphone.`;
     messageFinal.style.display="block";
     form.style.display="none";
 
