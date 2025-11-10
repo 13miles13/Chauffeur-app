@@ -1,4 +1,11 @@
 {
+  "type": "module",
+  "name": "ton-projet",
+  "version": "1.0.0",
+  ...
+}
+
+{
   "name": "chauffeur-app",
   "version": "1.0.0",
   "main": "server.js",
