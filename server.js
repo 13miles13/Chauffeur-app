@@ -26,6 +26,10 @@ const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const SENDGRID_FROM = process.env.SENDGRID_FROM || "selimmeguennitani@gmail.com";
 const ORS_API_KEY = process.env.ORS_API_KEY;
 
+if(!ORS_API_KEY) console.error("❌ ORS_API_KEY manquante !");
+if(!TWILIO_SID || !TWILIO_TOKEN || !TWILIO_PHONE) console.warn("⚠️ Twilio non configuré !");
+if(!SENDGRID_API_KEY) console.warn("⚠️ SendGrid non configuré !");
+
 sgMail.setApiKey(SENDGRID_API_KEY);
 const client = twilio(TWILIO_SID, TWILIO_TOKEN);
 
@@ -38,7 +42,7 @@ app.get("/", (req, res) => {
 app.post("/api/distance", async (req, res) => {
   try {
     const { coords } = req.body;
-    if (!coords || coords.length !== 2) throw new Error("Coordonnées invalides");
+    if(!coords || coords.length !== 2) throw new Error("Coordonnées invalides");
 
     const response = await fetch("https://api.openrouteservice.org/v2/directions/driving-car", {
       method: "POST",
@@ -50,20 +54,27 @@ app.post("/api/distance", async (req, res) => {
     });
 
     const data = await response.json();
+
+    if(data.error || !data.routes) {
+      console.error("Erreur ORS :", data);
+      return res.status(500).json({ error: "Erreur lors de la récupération de la distance ORS." });
+    }
+
     res.json(data);
-  } catch (err) {
+  } catch(err) {
     console.error("Erreur distance:", err);
-    res.status(500).json({ error: "Erreur lors du calcul de la distance." });
+    res.status(500).json({ error: err.message || "Erreur serveur" });
   }
 });
 
 // --- ROUTE SMS ---
 app.post("/api/send-sms", async (req, res) => {
   const { to, message } = req.body;
-  try {
+  if(!to || !message) return res.status(400).json({ error: "Téléphone ou message manquant" });
+  try{
     await client.messages.create({ body: message, from: TWILIO_PHONE, to });
     res.json({ success: true });
-  } catch (err) {
+  } catch(err){
     console.error("Erreur SMS:", err);
     res.status(500).json({ error: err.message });
   }
@@ -72,10 +83,11 @@ app.post("/api/send-sms", async (req, res) => {
 // --- ROUTE EMAIL ---
 app.post("/api/send-email", async (req, res) => {
   const { to, subject, html } = req.body;
-  try {
+  if(!to || !subject || !html) return res.status(400).json({ error: "Paramètres manquants" });
+  try{
     await sgMail.send({ to, from: SENDGRID_FROM, subject, html });
     res.json({ success: true });
-  } catch (err) {
+  } catch(err){
     console.error("Erreur email:", err);
     res.status(500).json({ error: err.message });
   }
