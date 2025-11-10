@@ -5,55 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chauffeur Privé</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f5f5f5;
-      color: #333;
-    }
-    .container {
-      max-width: 500px;
-      margin: 40px auto;
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 10px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      margin-top: 20px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .result {
-      margin-top: 20px;
-      text-align: center;
-    }
+    body { font-family: Arial; margin:0; padding:0; background:#f5f5f5; color:#333; }
+    .container { max-width:500px; margin:40px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+    h1 { text-align:center; color:#2c3e50; }
+    label { font-weight:bold; display:block; margin-top:10px; }
+    input { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc; }
+    button { width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:8px; margin-top:20px; cursor:pointer; font-size:16px; }
+    button:hover { background:#0056b3; }
+    .result { margin-top:20px; text-align:center; }
+    .autocomplete-items { position:absolute; background:#fff; border:1px solid #ccc; border-top:none; z-index:99; max-height:200px; overflow-y:auto; width:100%; }
+    .autocomplete-item { padding:8px; cursor:pointer; }
+    .autocomplete-item:hover { background:#f0f0f0; }
   </style>
 </head>
 <body>
@@ -67,57 +29,107 @@
       <label>Adresse d’arrivée :</label>
       <input id="arrivee" type="text" placeholder="Ex: Aéroport Charles de Gaulle" autocomplete="off" />
 
+      <label>Téléphone pour SMS :</label>
+      <input id="phone" type="text" placeholder="+33xxxxxxxxx" />
+
+      <label>Email pour confirmation :</label>
+      <input id="email" type="email" placeholder="exemple@mail.com" />
+
       <button type="submit">Calculer le prix</button>
     </form>
 
     <div class="result" id="result"></div>
   </div>
 
-  <script>
-    async function getCoordinates(address) {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-      const data = await res.json();
-      return data[0] ? [parseFloat(data[0].lon), parseFloat(data[0].lat)] : null;
-    }
+<script>
+  // --- Autocomplete Nominatim ---
+  async function autocomplete(inputId){
+    const input = document.getElementById(inputId);
+    const listId = inputId+"-list";
+    let list = document.createElement("div");
+    list.setAttribute("id", listId);
+    list.setAttribute("class","autocomplete-items");
+    input.parentNode.appendChild(list);
 
-    async function getDistanceKm(depart, arrivee) {
-      try {
-        const coordDepart = await getCoordinates(depart);
-        const coordArrivee = await getCoordinates(arrivee);
-        if (!coordDepart || !coordArrivee) throw new Error("Adresses invalides");
-
-        const res = await fetch("/api/distance", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ coords: [coordDepart, coordArrivee] })
+    input.addEventListener("input", async function(){
+      const val=this.value; list.innerHTML="";
+      if(!val || val.length<3) return;
+      try{
+        const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+        const data=await res.json();
+        data.forEach(place=>{
+          const item=document.createElement("div");
+          item.textContent=place.display_name;
+          item.classList.add("autocomplete-item");
+          item.addEventListener("click",()=>{
+            input.value=place.display_name; list.innerHTML="";
+          });
+          list.appendChild(item);
         });
-
-        const data = await res.json();
-        return data?.routes?.[0]?.summary?.distance / 1000 || null;
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
-    }
-
-    document.getElementById("formCourse").addEventListener("submit", async e => {
-      e.preventDefault();
-      const depart = document.getElementById("depart").value.trim();
-      const arrivee = document.getElementById("arrivee").value.trim();
-
-      if (!depart || !arrivee) return alert("Merci de remplir les deux adresses.");
-
-      document.getElementById("result").textContent = "Calcul en cours...";
-
-      const distanceKm = await getDistanceKm(depart, arrivee);
-      if (!distanceKm) return document.getElementById("result").textContent = "Erreur de calcul.";
-
-      const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
-      document.getElementById("result").innerHTML = `
-        Distance : ${distanceKm.toFixed(1)} km<br>
-        Prix estimé : <strong>${prix} €</strong>
-      `;
+      }catch(e){console.error("Erreur autocomplete:",e);}
     });
-  </script>
+  }
+  autocomplete("depart"); autocomplete("arrivee");
+
+  // --- Coordonnées ---
+  async function getCoordinates(address){
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data=await res.json();
+    return data[0]?[parseFloat(data[0].lon),parseFloat(data[0].lat)]:null;
+  }
+
+  // --- Distance ---
+  async function getDistanceKm(depart,arrivee){
+    const coordDepart=await getCoordinates(depart);
+    const coordArrivee=await getCoordinates(arrivee);
+    if(!coordDepart || !coordArrivee) throw new Error("Adresses invalides");
+    const res=await fetch("/api/distance",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({coords:[coordDepart,coordArrivee]})});
+    const data=await res.json();
+    return data?.routes?.[0]?.summary?.distance/1000 || null;
+  }
+
+  // --- Envoi SMS ---
+  async function sendSMS(to,message){
+    try{
+      await fetch("/api/send-sms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,message})});
+    }catch(e){console.error("Erreur SMS:",e);}
+  }
+
+  // --- Envoi Email ---
+  async function sendEmail(to,subject,html){
+    try{
+      await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,subject,html})});
+    }catch(e){console.error("Erreur Email:",e);}
+  }
+
+  // --- Formulaire ---
+  document.getElementById("formCourse").addEventListener("submit", async e=>{
+    e.preventDefault();
+    const depart=document.getElementById("depart").value.trim();
+    const arrivee=document.getElementById("arrivee").value.trim();
+    const phone=document.getElementById("phone").value.trim();
+    const email=document.getElementById("email").value.trim();
+    if(!depart||!arrivee) return alert("Merci de remplir les adresses");
+    document.getElementById("result").textContent="Calcul en cours...";
+
+    try{
+      const distanceKm=await getDistanceKm(depart,arrivee);
+      if(!distanceKm) throw new Error("Erreur de calcul");
+
+      const prix=Math.max(10,(distanceKm*1.8).toFixed(2));
+      document.getElementById("result").innerHTML=`Distance : ${distanceKm.toFixed(1)} km<br>Prix estimé : <strong>${prix} €</strong>`;
+
+      const msgSMS=`Votre course de ${depart} à ${arrivee} est estimée à ${prix} € (${distanceKm.toFixed(1)} km)`;
+      if(phone) sendSMS(phone,msgSMS);
+
+      const htmlEmail=`<p>Bonjour,</p><p>Votre course de <strong>${depart}</strong> à <strong>${arrivee}</strong> est estimée à <strong>${prix} €</strong> pour une distance de <strong>${distanceKm.toFixed(1)} km</strong>.</p>`;
+      if(email) sendEmail(email,"Confirmation course chauffeur",htmlEmail);
+
+    }catch(err){
+      console.error(err);
+      document.getElementById("result").textContent="Erreur lors du calcul";
+    }
+  });
+</script>
 </body>
 </html>
