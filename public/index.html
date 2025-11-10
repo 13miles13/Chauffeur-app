@@ -59,31 +59,30 @@ button:hover { background:#0056b3; }
 <script>
 // === Helper debug pour mobile ===
 function showDebug(msg){
-  const debugDiv = document.getElementById("debug");
-  debugDiv.textContent = msg;
+  document.getElementById("debug").textContent = msg;
 }
 
 // === Autocomplete Nominatim ===
 async function autocomplete(inputId){
   const input = document.getElementById(inputId);
-  const listId = inputId + "-list";
+  const listId = inputId+"-list";
   let list = document.createElement("div");
   list.setAttribute("id", listId);
   list.setAttribute("class","autocomplete-items");
   input.parentNode.appendChild(list);
 
   input.addEventListener("input", async function(){
-    const val = this.value;
-    list.innerHTML = "";
-    if(!val || val.length < 3) return;
+    const val=this.value;
+    list.innerHTML="";
+    if(!val || val.length<3) return;
     try{
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
-      const data = await res.json();
+      const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+      const data=await res.json();
       data.forEach(place=>{
-        const item = document.createElement("div");
-        item.textContent = place.display_name;
+        const item=document.createElement("div");
+        item.textContent=place.display_name;
         item.classList.add("autocomplete-item");
-        item.addEventListener("click", ()=>{ input.value = place.display_name; list.innerHTML=""; });
+        item.addEventListener("click",()=>{ input.value=place.display_name; list.innerHTML=""; });
         list.appendChild(item);
       });
     } catch(e){ showDebug("Erreur autocomplete: " + e.message); }
@@ -95,17 +94,14 @@ autocomplete("arrivee");
 // === Coordonnées ===
 async function getCoordinates(address){
   try{
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
-    const data = await res.json();
+    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const data=await res.json();
     if(!data[0]) return null;
-    return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
-  } catch(e){
-    showDebug("Erreur coordonnées: " + e.message);
-    return null;
-  }
+    return [parseFloat(data[0].lon),parseFloat(data[0].lat)];
+  } catch(e){ showDebug("Erreur coordonnées: "+e.message); return null; }
 }
 
-// === Distance via backend ===
+// === Distance via backend avec debug ===
 async function getDistanceKm(depart,arrivee){
   const coordDepart = await getCoordinates(depart);
   const coordArrivee = await getCoordinates(arrivee);
@@ -115,11 +111,18 @@ async function getDistanceKm(depart,arrivee){
   const res = await fetch("/api/distance",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ coords:[coordDepart,coordArrivee] })
+    body:JSON.stringify({ coords:[coordDepart,coordArrivee] })
   });
-  const data = await res.json();
-  if(data.error) throw new Error(data.error || "Erreur ORS");
-  return data?.routes?.[0]?.summary?.distance/1000 || null;
+
+  const text = await res.text();
+  showDebug("Réponse serveur brute: "+text);
+  try{
+    const data = JSON.parse(text);
+    if(data.error) throw new Error(data.error);
+    return data?.routes?.[0]?.summary?.distance/1000 || null;
+  }catch(err){
+    throw new Error("Impossible de parser JSON: "+err.message);
+  }
 }
 
 // === Envoi SMS / Email ===
@@ -129,32 +132,31 @@ async function sendEmail(to,subject,html){ if(!to) return; try{ await fetch("/ap
 // === Formulaire ===
 document.getElementById("formCourse").addEventListener("submit",async e=>{
   e.preventDefault();
-  const depart = document.getElementById("depart").value.trim();
-  const arrivee = document.getElementById("arrivee").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const depart=document.getElementById("depart").value.trim();
+  const arrivee=document.getElementById("arrivee").value.trim();
+  const phone=document.getElementById("phone").value.trim();
+  const email=document.getElementById("email").value.trim();
 
-  if(!depart || !arrivee) return showDebug("Merci de remplir les adresses");
-
-  document.getElementById("result").textContent = "Calcul en cours...";
+  if(!depart||!arrivee) return showDebug("Merci de remplir les adresses");
+  document.getElementById("result").textContent="Calcul en cours...";
   showDebug("");
 
   try{
     const distanceKm = await getDistanceKm(depart,arrivee);
     if(!distanceKm) throw new Error("Erreur de calcul");
 
-    const prix = Math.max(10,(distanceKm*1.8).toFixed(2));
-    document.getElementById("result").innerHTML = `Distance : ${distanceKm.toFixed(1)} km<br>Prix estimé : <strong>${prix} €</strong>`;
+    const prix=Math.max(10,(distanceKm*1.8).toFixed(2));
+    document.getElementById("result").innerHTML=`Distance : ${distanceKm.toFixed(1)} km<br>Prix estimé : <strong>${prix} €</strong>`;
 
-    const msgSMS = `Votre course de ${depart} à ${arrivee} est estimée à ${prix} € (${distanceKm.toFixed(1)} km)`;
+    const msgSMS=`Votre course de ${depart} à ${arrivee} est estimée à ${prix} € (${distanceKm.toFixed(1)} km)`;
     sendSMS(phone,msgSMS);
 
-    const htmlEmail = `<p>Bonjour,</p><p>Votre course de <strong>${depart}</strong> à <strong>${arrivee}</strong> est estimée à <strong>${prix} €</strong> pour une distance de <strong>${distanceKm.toFixed(1)} km</strong>.</p>`;
+    const htmlEmail=`<p>Bonjour,</p><p>Votre course de <strong>${depart}</strong> à <strong>${arrivee}</strong> est estimée à <strong>${prix} €</strong> pour une distance de <strong>${distanceKm.toFixed(1)} km</strong>.</p>`;
     sendEmail(email,"Confirmation course chauffeur",htmlEmail);
 
   } catch(err){
-    showDebug("Erreur : " + err.message);
-    document.getElementById("result").textContent = "Erreur lors du calcul";
+    showDebug("Erreur: "+err.message);
+    document.getElementById("result").textContent="Erreur lors du calcul";
   }
 });
 </script>
