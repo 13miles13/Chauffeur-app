@@ -17,12 +17,22 @@ body {
     max-width:420px;
     margin:25px auto;
     background:#fff;
-    border-radius:16px;
+    border-radius:20px;
     padding:30px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
-h1 { text-align:center; font-size:1.7em; color:#1a1a1a; margin-bottom:15px; }
-.label { display:block; font-weight:600; margin-top:12px; font-size:0.95em; }
+h1 {
+    text-align:center;
+    font-size:1.7em;
+    color:#1a1a1a;
+    margin-bottom:15px;
+}
+label {
+    display:block;
+    font-weight:600;
+    margin-top:12px;
+    font-size:0.95em;
+}
 input, button {
     width:100%;
     padding:12px;
@@ -32,7 +42,11 @@ input, button {
     font-size:0.95em;
     box-sizing:border-box;
 }
-input:focus { outline:none; border-color:#0066cc; box-shadow:0 0 5px rgba(0,102,204,0.3); }
+input:focus {
+    outline:none;
+    border-color:#0066cc;
+    box-shadow:0 0 5px rgba(0,102,204,0.3);
+}
 button {
     background:linear-gradient(90deg,#0066cc,#004999);
     color:white;
@@ -56,8 +70,17 @@ button:hover {
     border-radius:10px;
     font-weight:600;
 }
-#recap div { margin-bottom:8px; }
-.footer { text-align:center; margin-top:25px; font-size:0.9em; color:#555; }
+#errorLog {
+    margin-top:15px;
+    color:red;
+    font-size:0.9em;
+}
+.footer {
+    text-align:center;
+    margin-top:30px;
+    font-size:0.9em;
+    color:#555;
+}
 .footer a { color:#0066cc; text-decoration:none; }
 </style>
 </head>
@@ -65,25 +88,26 @@ button:hover {
 <div class="container">
 <h1>Confirmation de votre course</h1>
 
-<div class="result" id="recap"></div>
+<div id="recap" class="result"></div>
 
-<form id="formConfirm">
-<label class="label">Nom :</label>
+<form id="confirmForm">
+<label>Nom :</label>
 <input type="text" id="nom" required>
 
-<label class="label">Prénom :</label>
+<label>Prénom :</label>
 <input type="text" id="prenom" required>
 
-<label class="label">Email :</label>
+<label>Email :</label>
 <input type="email" id="email" placeholder="exemple@domaine.com" required>
 
-<label class="label">Téléphone :</label>
+<label>Téléphone :</label>
 <input type="tel" id="phone" placeholder="+33XXXXXXXXX" required pattern="^\+33[1-9]\d{8}$">
 
 <button type="submit">Accepter le devis</button>
 </form>
 
 <div id="messageFinal" class="result" style="display:none;"></div>
+<div id="errorLog"></div>
 </div>
 
 <div class="footer">
@@ -93,51 +117,102 @@ button:hover {
 
 <script>
 const recapDiv = document.getElementById("recap");
-const form = document.getElementById("formConfirm");
+const form = document.getElementById("confirmForm");
 const messageFinal = document.getElementById("messageFinal");
+const errorLog = document.getElementById("errorLog");
+
+// Affiche une erreur
+function logError(msg){
+    const p = document.createElement("p");
+    p.textContent = msg;
+    errorLog.appendChild(p);
+}
 
 // Récupération des données de la course depuis sessionStorage
 const course = JSON.parse(sessionStorage.getItem("course") || "{}");
 if(course && Object.keys(course).length>0){
-    recapDiv.innerHTML = `
-        <div><strong>Départ :</strong> ${course.depart}</div>
-        <div><strong>Arrivée :</strong> ${course.arrivee}</div>
-        <div><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</div>
-        <div><strong>Prix :</strong> ${course.prix} €</div>
-        <div><strong>Heure :</strong> ${course.heure}</div>
-    `;
+  recapDiv.innerHTML=`
+    <strong>Départ :</strong> ${course.depart}<br>
+    <strong>Arrivée :</strong> ${course.arrivee}<br>
+    <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
+    <strong>Prix :</strong> ${course.prix} €<br>
+    <strong>Heure :</strong> ${course.heure}
+  `;
 }
 
 // Formulaire confirmation
 form.addEventListener("submit", async e=>{
-    e.preventDefault();
-    const nom = document.getElementById("nom").value.trim();
-    const prenom = document.getElementById("prenom").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const phone = document.getElementById("phone").value.trim();
+  e.preventDefault();
+  errorLog.innerHTML = ""; // reset erreurs affichées
 
-    if(!nom || !prenom || !email){ alert("Nom, prénom et email obligatoires"); return; }
-    const phoneRegex = /^\+33[1-9]\d{8}$/;
-    if(!phoneRegex.test(phone)){ alert("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
+  const nom = document.getElementById("nom").value.trim();
+  const prenom = document.getElementById("prenom").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const email = document.getElementById("email").value.trim();
 
-    try {
-        const res = await fetch("/api/confirm-course", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body: JSON.stringify({ nom, prenom, emailClient: email, phoneClient: phone, course })
-        });
-        const data = await res.json();
-        if(data.success){
-            messageFinal.innerHTML = "✅ accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
-            messageFinal.style.display = "block";
-            form.style.display = "none";
-        } else {
-            alert("Erreur lors de la confirmation. Réessayez.");
-        }
-    } catch(err){
-        console.error(err);
-        alert("Erreur serveur, réessayez plus tard.");
-    }
+  if(!nom || !prenom || !email){ logError("Nom, prénom et email obligatoires"); return; }
+  const phoneRegex = /^\+33[1-9]\d{8}$/;
+  if(!phoneRegex.test(phone)){ logError("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
+
+  try{
+    // --- Email Client ---
+    const emailRes = await fetch("/api/send-email",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: email,
+        subject: "Confirmation de votre course",
+        html: `Bonjour ${prenom} ${nom},<br>Votre course de ${course.depart} à ${course.arrivee} est confirmée.<br>Distance : ${course.distanceKm.toFixed(1)} km<br>Prix : ${course.prix} €<br>Heure : ${course.heure}`
+      })
+    });
+    const emailData = await emailRes.json();
+    if(emailData.error) logError("Erreur email client : " + emailData.error);
+
+    // --- Email Chauffeur ---
+    const emailChauffeurRes = await fetch("/api/send-email",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: "selimmeguennitani@gmail.com",
+        subject: "Nouvelle réservation",
+        html: `Nouvelle course : ${prenom} ${nom}<br>Départ : ${course.depart}<br>Arrivée : ${course.arrivee}<br>Téléphone : ${phone}`
+      })
+    });
+    const emailChauffeurData = await emailChauffeurRes.json();
+    if(emailChauffeurData.error) logError("Erreur email chauffeur : " + emailChauffeurData.error);
+
+    // --- SMS Client ---
+    const smsRes = await fetch("/api/send-sms",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: phone,
+        message: `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} est confirmée. Un chauffeur vous contactera dans un instant.`
+      })
+    });
+    const smsData = await smsRes.json();
+    if(smsData.error) logError("Erreur SMS client : " + smsData.error);
+
+    // --- SMS Chauffeur ---
+    const smsChauffeurRes = await fetch("/api/send-sms",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        to: "0763133397",
+        message: `Nouvelle course : ${prenom} ${nom} de ${course.depart} à ${course.arrivee}. Tel: ${phone}`
+      })
+    });
+    const smsChauffeurData = await smsChauffeurRes.json();
+    if(smsChauffeurData.error) logError("Erreur SMS chauffeur : " + smsChauffeurData.error);
+
+    // --- Message final ---
+    messageFinal.innerHTML = "✅ Accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
+    messageFinal.style.display="block";
+    form.style.display="none";
+
+  }catch(err){
+    logError("Erreur générale : " + err.message);
+  }
 });
 </script>
 </body>
