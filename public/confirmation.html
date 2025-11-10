@@ -163,21 +163,32 @@ form.addEventListener('submit', async e => {
   try {
     // email client
     await fetch("/api/send-email", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        to: email,
-        subject: "Confirmation de votre course",
-        html: `
-          <p>Bonjour ${prenom} ${nom},</p>
-          <p>Votre course de <strong>${course.depart}</strong> à <strong>${course.arrivee}</strong> est confirmée.</p>
-          <p>Distance : ${course.distanceKm.toFixed(1)} km<br>
-          Prix : <strong>${course.prix} €</strong><br>
-          Heure : ${course.heure}</p>
-          <p>Merci de votre confiance.</p>
-        `
-      })
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    to: email, // client
+    subject: "Confirmation de votre course",
+    html: `
+      Bonjour ${prenom} ${nom},<br>
+      Votre course de ${course.depart} à ${course.arrivee} est confirmée.<br>
+      Distance : ${course.distanceKm.toFixed(1)} km<br>
+      Prix : ${course.prix} €<br>
+      Heure : ${course.heure}<br><br>
+      Merci d’avoir choisi Chauffeur Privé.
+    `,
+    chauffeurInfo: {
+      nom,
+      prenom,
+      email,
+      phone,
+      depart: course.depart,
+      arrivee: course.arrivee,
+      distanceKm: course.distanceKm.toFixed(1),
+      prix: course.prix,
+      heure: course.heure
+    }
+  }),
+});
 
     // sms client
     await fetch("/api/send-sms", {
