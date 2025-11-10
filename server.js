@@ -3,59 +3,45 @@ const express = require('express');
 const twilio = require('twilio');
 const sgMail = require('@sendgrid/mail');
 const path = require('path');
-const helmet = require('helmet');
-const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(helmet());
-app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('.')); // Sert index.html + assets
 
 // --- CONFIG ---
-const { TWILIO_SID, TWILIO_TOKEN, TWILIO_PHONE, SENDGRID_API_KEY, SENDGRID_FROM } = process.env;
+const TWILIO_SID = process.env.TWILIO_SID;
+const TWILIO_TOKEN = process.env.TWILIO_TOKEN;
+const TWILIO_PHONE = process.env.TWILIO_PHONE;
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+const SENDGRID_FROM = process.env.SENDGRID_FROM || 'selimmeguennitani@gmail.com';
 
 sgMail.setApiKey(SENDGRID_API_KEY);
 const client = twilio(TWILIO_SID, TWILIO_TOKEN);
 
-// --- Validation Middleware ---
-function validateFields(requiredFields) {
-  return (req, res, next) => {
-    for (const field of requiredFields) {
-      if (!req.body[field] || typeof req.body[field] !== 'string') {
-        return res.status(400).json({ error: `Champ invalide ou manquant: ${field}` });
-      }
-    }
-    next();
-  };
-}
-
 // --- ROUTE PRINCIPALE ---
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // --- SMS ---
-app.post('/api/send-sms', validateFields(['to', 'message']), async (req, res) => {
+app.post('/api/send-sms', async (req, res) => {
+  const { to, message } = req.body;
   try {
-    const { to, message } = req.body;
     await client.messages.create({ body: message, from: TWILIO_PHONE, to });
     res.json({ success: true });
   } catch (err) {
-    console.error('Erreur Twilio:', err.message);
-    res.status(500).json({ error: 'Erreur d\'envoi du SMS.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
 // --- EMAIL ---
-app.post('/api/send-email', validateFields(['to', 'subject', 'html']), async (req, res) => {
+app.post('/api/send-email', async (req, res) => {
+  const { to, subject, html } = req.body;
   try {
-    const { to, subject, html } = req.body;
     await sgMail.send({ to, from: SENDGRID_FROM, subject, html });
     res.json({ success: true });
   } catch (err) {
-    console.error('Erreur SendGrid:', err.message);
-    res.status(500).json({ error: 'Erreur d\'envoi de l\'email.' });
+    res.status(500).json({ error: err.message });
   }
 });
 
