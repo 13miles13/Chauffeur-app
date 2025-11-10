@@ -48,71 +48,119 @@
   </div>
 
   <script>
-    async function autocomplete(inputId) {
-      const input = document.getElementById(inputId);
-      const wrapper = input.parentNode;
-      const list = document.createElement("div");
-      list.classList.add("autocomplete-items");
-      wrapper.appendChild(list);
+  // === Boîte de debug (mobile-friendly) ===
+  function showDebug(msg) {
+    let debugBox = document.getElementById("debugBox");
+    if (!debugBox) {
+      debugBox = document.createElement("div");
+      debugBox.id = "debugBox";
+      Object.assign(debugBox.style, {
+        position: "fixed", bottom: "0", left: "0", width: "100%",
+        maxHeight: "40vh", overflowY: "auto", background: "rgba(0,0,0,0.8)",
+        color: "#0f0", fontSize: "12px", padding: "8px", zIndex: "9999", fontFamily: "monospace"
+      });
+      document.body.appendChild(debugBox);
+    }
+    const time = new Date().toLocaleTimeString();
+    const line = document.createElement("div");
+    line.textContent = `[${time}] ${msg}`;
+    debugBox.appendChild(line);
+    debugBox.scrollTop = debugBox.scrollHeight;
+  }
 
-      input.addEventListener("input", async function() {
-        const val = this.value;
-        list.innerHTML = "";
-        if (!val || val.length < 3) return;
+  // === Autocomplétion ===
+  async function autocomplete(inputId) {
+    const input = document.getElementById(inputId);
+    const listId = inputId + "-list";
+    let list = document.createElement("div");
+    list.setAttribute("id", listId);
+    list.setAttribute("class", "autocomplete-items");
+    input.parentNode.appendChild(list);
 
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5`);
+    input.addEventListener("input", async function() {
+      const val = this.value;
+      list.innerHTML = "";
+      if (!val || val.length < 3) return;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
         const data = await res.json();
         data.forEach(place => {
           const item = document.createElement("div");
-          item.classList.add("autocomplete-item");
           item.textContent = place.display_name;
+          item.classList.add("autocomplete-item");
           item.addEventListener("click", () => {
             input.value = place.display_name;
             list.innerHTML = "";
           });
           list.appendChild(item);
         });
-      });
+      } catch (e) {
+        showDebug("Erreur autocomplétion: " + e.message);
+      }
+    });
+  }
+  autocomplete("depart");
+  autocomplete("arrivee");
 
-      document.addEventListener("click", e => {
-        if (!wrapper.contains(e.target)) list.innerHTML = "";
-      });
-    }
-    autocomplete("depart");
-    autocomplete("arrivee");
-
-    async function getCoordinates(address) {
+  // === Géocodage ===
+  async function getCoordinates(address) {
+    try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
       const data = await res.json();
       if (!data[0]) return null;
       return [parseFloat(data[0].lon), parseFloat(data[0].lat)];
+    } catch (e) {
+      showDebug("Erreur coordonnées: " + e.message);
+      return null;
+    }
+  }
+
+  // === Distance (Haversine) ===
+  function calcDistanceKm([lon1, lat1], [lon2, lat2]) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  // === Soumission du formulaire ===
+  document.getElementById("formCourse").addEventListener("submit", async e => {
+    e.preventDefault(); // Empêche le rechargement de la page
+
+    const depart = document.getElementById("depart").value.trim();
+    const arrivee = document.getElementById("arrivee").value.trim();
+
+    if (!depart || !arrivee) {
+      alert("Merci de remplir les deux adresses.");
+      return;
     }
 
-    function calcDistanceKm([lon1, lat1], [lon2, lat2]) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+    document.getElementById("result").textContent = "Calcul en cours...";
+
+    const coordDepart = await getCoordinates(depart);
+    const coordArrivee = await getCoordinates(arrivee);
+
+    if (!coordDepart || !coordArrivee) {
+      document.getElementById("result").textContent = "Adresses introuvables.";
+      return;
     }
 
-    document.getElementById("formCourse").addEventListener("submit", async e => {
-      e.preventDefault();
-      const depart = document.getElementById("depart").value.trim();
-      const arrivee = document.getElementById("arrivee").value.trim();
-      if (!depart || !arrivee) return alert("Merci de remplir les deux adresses.");
+    const distanceKm = calcDistanceKm(coordDepart, coordArrivee);
+    const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
 
-      const coordDepart = await getCoordinates(depart);
-      const coordArrivee = await getCoordinates(arrivee);
-      if (!coordDepart || !coordArrivee) return alert("Adresses introuvables.");
+    // ✅ Sauvegarde dans le navigateur (sessionStorage)
+    sessionStorage.setItem("course", JSON.stringify({
+      depart,
+      arrivee,
+      distanceKm,
+      prix
+    }));
 
-      const distanceKm = calcDistanceKm(coordDepart, coordArrivee);
-      const prix = Math.max(10, (distanceKm * 1.8).toFixed(2));
-
-      sessionStorage.setItem("course", JSON.stringify({ depart, arrivee, distanceKm, prix }));
-      window.location.href = "confirmation.html";
-    });
+    // ✅ Redirection vers la page de confirmation
+    window.location.href = "confirmation.html";
+  });
   </script>
 </body>
 </html>
