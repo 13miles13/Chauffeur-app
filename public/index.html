@@ -6,24 +6,24 @@
 <title>Chauffeur Privé VTC Marseille & Aix en Provence</title>
 <meta name="description" content="Réservation chauffeur privé et VTC à Marseille, Aix-en-Provence et alentours : Cassis, Ciotat, Martigues, Marignane. Transfert aéroport rapide et sécurisé.">
 <meta name="keywords" content="chauffeur, VTC, taxi, pas cher, Marseille, Aix en Provence, Aix, Venelles, Pertuis, Saint Cannat, Rotonde, Les Milles, Gare TGV Aix en Provence, Aiguille, Ventabren, Cassis, Ciotat, Martigues, Marignane, Vitrolles, aéroport MRS, aéroport Marseille, réservation chauffeur, course privée, trajet aéroport, transfert rapide, VTC Marseille, chauffeur Marseille">
-<meta name="robots" content="index, follow">
-<link rel="icon" href="favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body { font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; }
-.container { max-width:400px; margin:20px auto; background:#fff; border-radius:12px; padding:20px; box-shadow:0 5px 15px rgba(0,0,0,0.1); }
-h1 { text-align:center; font-size:1.5em; color:#1a1a1a; margin-bottom:20px; }
-label { display:block; font-weight:bold; margin-top:12px; font-size:0.95em; }
-input, select, button { width:100%; padding:10px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:0.9em; }
-button { background-color:#0066cc; color:white; border:none; margin-top:15px; cursor:pointer; font-size:1em; border-radius:6px; transition:0.3s; }
-button:hover { background-color:#004999; }
+body { font-family:'Poppins', sans-serif; margin:0; padding:0; background:#f0f2f5; color:#333; }
+.container { max-width:420px; margin:25px auto; background:#fff; border-radius:16px; padding:25px; box-shadow:0 8px 20px rgba(0,0,0,0.15); }
+h1 { text-align:center; font-size:1.7em; color:#1a1a1a; margin-bottom:20px; }
+label { display:block; font-weight:600; margin-top:15px; font-size:0.95em; }
+input, select, button { width:100%; padding:12px; margin-top:5px; border-radius:8px; border:1px solid #ccc; font-size:0.95em; }
+input:focus { outline:none; border-color:#0066cc; box-shadow:0 0 5px rgba(0,102,204,0.3); }
 .autocomplete-items { position:absolute; background:white; border:1px solid #ccc; border-top:none; z-index:99; max-height:150px; overflow-y:auto; width:100%; font-size:0.85em; border-radius:0 0 6px 6px; }
-.autocomplete-item { padding:5px 8px; cursor:pointer; line-height:1.2; }
-.autocomplete-item:hover { background:#f0f0f0; }
-.checkbox-label { display:flex; align-items:center; margin-top:10px; cursor:pointer; font-size:0.9em; }
-.checkbox-label input { margin-right:8px; transform:scale(1.2); }
+.autocomplete-item { padding:6px 10px; cursor:pointer; line-height:1.2; }
+.autocomplete-item:hover { background:#e0f0ff; }
+button { background:linear-gradient(90deg,#0066cc,#004999); color:white; border:none; margin-top:18px; cursor:pointer; font-size:1em; font-weight:600; border-radius:8px; transition:0.3s; }
+button:hover { transform:translateY(-2px); box-shadow:0 6px 15px rgba(0,0,0,0.2); }
+.checkbox-label { display:flex; align-items:center; margin-top:12px; cursor:pointer; font-size:0.95em; flex-wrap:nowrap; }
+.checkbox-label input { margin-right:8px; transform:scale(1.2); accent-color:#0066cc; }
 #datetimeFields { margin-top:5px; }
 .hidden { display:none; }
-.result { margin-top:12px; text-align:center; font-size:0.9em; background:#e6f0ff; padding:8px; border-radius:6px; }
+.result { margin-top:15px; text-align:center; font-size:0.95em; background:#e6f0ff; padding:10px; border-radius:8px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -62,7 +62,7 @@ const nowCheckbox = document.getElementById("nowCheckbox");
 const datetimeFields = document.getElementById("datetimeFields");
 nowCheckbox.addEventListener("change", ()=>datetimeFields.classList.toggle("hidden", nowCheckbox.checked));
 
-// Autocomplétion Nominatim
+// Autocomplete
 function setupAutocomplete(id){
   const input = document.getElementById(id);
   const list = document.getElementById(id+"-list");
@@ -85,7 +85,7 @@ function setupAutocomplete(id){
 setupAutocomplete("depart");
 setupAutocomplete("arrivee");
 
-// Géocodage + distance
+// Calcul distance
 async function getCoordinates(address){
   try{
     const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
@@ -102,7 +102,7 @@ function calcDistanceKm([lon1,lat1],[lon2,lat2]){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-// Formulaire calcul prix
+// Formulaire
 document.getElementById("formCourse").addEventListener("submit", async e=>{
   e.preventDefault();
   const depart = document.getElementById("depart").value.trim();
