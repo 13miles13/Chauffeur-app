@@ -4,88 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Confirmation Chauffeur Privé</title>
-<meta name="description" content="Confirmation de votre course chauffeur privé et VTC à Marseille, Aix-en-Provence et alentours. Paiement directement avec le chauffeur.">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 <style>
 body {
-  font-family:'Poppins', sans-serif;
-  margin:0;
-  padding:0;
-  background:#f0f2f5;
-  color:#333;
+    font-family:'Poppins', sans-serif;
+    margin:0;
+    padding:0;
+    background:#f0f2f5;
+    color:#333;
 }
 .container {
-  max-width:450px;
-  margin:25px auto;
-  background:#fff;
-  border-radius:20px;
-  padding:30px;
-  box-shadow:0 10px 25px rgba(0,0,0,0.15);
+    max-width:420px;
+    margin:25px auto;
+    background:#fff;
+    border-radius:16px;
+    padding:30px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
-h1 {
-  text-align:center;
-  font-size:1.8em;
-  color:#1a1a1a;
-  margin-bottom:15px;
-}
-#recap {
-  margin-bottom:20px;
-  padding:15px;
-  background:#e6f0ff;
-  border-radius:12px;
-  line-height:1.5em;
-}
-label {
-  display:block;
-  font-weight:600;
-  margin-top:12px;
-  font-size:0.95em;
-}
+h1 { text-align:center; font-size:1.7em; color:#1a1a1a; margin-bottom:15px; }
+.label { display:block; font-weight:600; margin-top:12px; font-size:0.95em; }
 input, button {
-  width:100%;
-  padding:12px;
-  margin-top:5px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  font-size:0.95em;
-  box-sizing:border-box;
+    width:100%;
+    padding:12px;
+    margin-top:5px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:0.95em;
+    box-sizing:border-box;
 }
-input:focus {
-  outline:none;
-  border-color:#0066cc;
-  box-shadow:0 0 5px rgba(0,102,204,0.3);
-}
+input:focus { outline:none; border-color:#0066cc; box-shadow:0 0 5px rgba(0,102,204,0.3); }
 button {
-  background:linear-gradient(90deg,#0066cc,#004999);
-  color:white;
-  border:none;
-  margin-top:20px;
-  cursor:pointer;
-  font-size:1em;
-  font-weight:600;
-  border-radius:10px;
-  transition:0.3s;
+    background:linear-gradient(90deg,#0066cc,#004999);
+    color:white;
+    border:none;
+    margin-top:20px;
+    cursor:pointer;
+    font-size:1em;
+    font-weight:600;
+    border-radius:10px;
+    transition:0.3s;
 }
 button:hover {
-  transform:translateY(-2px);
-  box-shadow:0 6px 15px rgba(0,0,0,0.2);
+    transform:translateY(-2px);
+    box-shadow:0 6px 15px rgba(0,0,0,0.2);
 }
 .result {
-  margin-top:20px;
-  text-align:left;
-  font-size:0.95em;
-  background:#e6f0ff;
-  padding:15px;
-  border-radius:12px;
-  font-weight:600;
-  line-height:1.5em;
+    margin-top:15px;
+    font-size:0.95em;
+    background:#e6f0ff;
+    padding:12px;
+    border-radius:10px;
+    font-weight:600;
 }
-.footer {
-  text-align:center;
-  margin-top:25px;
-  font-size:0.9em;
-  color:#555;
-}
+#recap div { margin-bottom:8px; }
+.footer { text-align:center; margin-top:25px; font-size:0.9em; color:#555; }
 .footer a { color:#0066cc; text-decoration:none; }
 </style>
 </head>
@@ -93,19 +65,19 @@ button:hover {
 <div class="container">
 <h1>Confirmation de votre course</h1>
 
-<div id="recap"></div>
+<div class="result" id="recap"></div>
 
-<form id="confirmForm">
-<label>Nom :</label>
+<form id="formConfirm">
+<label class="label">Nom :</label>
 <input type="text" id="nom" required>
 
-<label>Prénom :</label>
+<label class="label">Prénom :</label>
 <input type="text" id="prenom" required>
 
-<label>Email :</label>
+<label class="label">Email :</label>
 <input type="email" id="email" placeholder="exemple@domaine.com" required>
 
-<label>Téléphone :</label>
+<label class="label">Téléphone :</label>
 <input type="tel" id="phone" placeholder="+33XXXXXXXXX" required pattern="^\+33[1-9]\d{8}$">
 
 <button type="submit">Accepter le devis</button>
@@ -121,53 +93,51 @@ button:hover {
 
 <script>
 const recapDiv = document.getElementById("recap");
-const form = document.getElementById("confirmForm");
+const form = document.getElementById("formConfirm");
 const messageFinal = document.getElementById("messageFinal");
 
 // Récupération des données de la course depuis sessionStorage
 const course = JSON.parse(sessionStorage.getItem("course") || "{}");
 if(course && Object.keys(course).length>0){
-  recapDiv.innerHTML=`
-    <strong>Départ :</strong> ${course.depart}<br>
-    <strong>Arrivée :</strong> ${course.arrivee}<br>
-    <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
-    <strong>Prix :</strong> ${course.prix} €<br>
-    <strong>Heure :</strong> ${course.heure}
-  `;
+    recapDiv.innerHTML = `
+        <div><strong>Départ :</strong> ${course.depart}</div>
+        <div><strong>Arrivée :</strong> ${course.arrivee}</div>
+        <div><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</div>
+        <div><strong>Prix :</strong> ${course.prix} €</div>
+        <div><strong>Heure :</strong> ${course.heure}</div>
+    `;
 }
 
 // Formulaire confirmation
 form.addEventListener("submit", async e=>{
-  e.preventDefault();
-  const nom = document.getElementById("nom").value.trim();
-  const prenom = document.getElementById("prenom").value.trim();
-  const phone = document.getElementById("phone").value.trim();
-  const email = document.getElementById("email").value.trim();
+    e.preventDefault();
+    const nom = document.getElementById("nom").value.trim();
+    const prenom = document.getElementById("prenom").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
 
-  if(!nom || !prenom || !email){ alert("Nom, prénom et email obligatoires"); return; }
-  const phoneRegex = /^\+33[1-9]\d{8}$/;
-  if(!phoneRegex.test(phone)){ alert("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
+    if(!nom || !prenom || !email){ alert("Nom, prénom et email obligatoires"); return; }
+    const phoneRegex = /^\+33[1-9]\d{8}$/;
+    if(!phoneRegex.test(phone)){ alert("Numéro de téléphone mal écrit, format +33XXXXXXXXX"); return; }
 
-  if(!course || Object.keys(course).length===0){ alert("Aucune course en session"); return; }
-
-  try{
-    const res = await fetch("/api/confirm-course", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ nom, prenom, email, phone, course })
-    });
-    const data = await res.json();
-    if(data.success){
-      messageFinal.innerHTML = "✅ Confirmation acceptée ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception).<br>Un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
-      messageFinal.style.display="block";
-      form.style.display="none";
-    } else {
-      alert("Erreur lors de la confirmation : "+data.error);
+    try {
+        const res = await fetch("/api/confirm-course", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ nom, prenom, emailClient: email, phoneClient: phone, course })
+        });
+        const data = await res.json();
+        if(data.success){
+            messageFinal.innerHTML = "✅ accepté ! SMS et email envoyés (⚠️ vérifiez vos spam s'il n'apparaît pas dans votre boîte de réception), un chauffeur vous contactera dans un instant, 📱 restez proche de votre téléphone.";
+            messageFinal.style.display = "block";
+            form.style.display = "none";
+        } else {
+            alert("Erreur lors de la confirmation. Réessayez.");
+        }
+    } catch(err){
+        console.error(err);
+        alert("Erreur serveur, réessayez plus tard.");
     }
-  }catch(err){
-    console.error(err);
-    alert("Erreur lors de la confirmation, réessayez.");
-  }
 });
 </script>
 </body>
