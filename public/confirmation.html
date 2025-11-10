@@ -3,97 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirmation du devis</title>
+  <title>Confirmation de course</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:0; color:#333; }
     .container {
-      max-width: 480px; margin: 30px auto; background: #fff;
-      border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      max-width: 500px; margin: 40px auto; background: #fff;
+      border-radius: 12px; padding: 20px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    h1 { text-align: center; color: #333; }
-    .recap { margin-bottom: 20px; }
-    label { font-weight: bold; display: block; margin-top: 10px; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-top: 5px; }
+    h1 { text-align: center; color: #2c3e50; }
+    label { display:block; margin-top:15px; font-weight:bold; }
+    input { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; margin-top:5px; }
     button {
-      width: 100%; padding: 12px; border: none; border-radius: 8px;
-      background-color: #28a745; color: white; font-size: 16px; margin-top: 20px;
+      width:100%; padding:12px; background:#007bff; color:white;
+      border:none; border-radius:8px; margin-top:20px; cursor:pointer;
+      font-size:16px;
     }
-    button:hover { background-color: #218838; }
-    .success { color: green; text-align: center; margin-top: 10px; }
-    .error { color: red; text-align: center; margin-top: 10px; }
+    button:hover { background:#0056b3; }
+    .recap { margin-top:20px; line-height:1.6; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Confirmation du devis</h1>
+    <h1>Confirmation de votre course</h1>
+
     <div class="recap" id="recap"></div>
 
-    <form id="confirmForm">
+    <form id="formConfirm">
       <label>Nom :</label>
-      <input id="nom" required />
+      <input type="text" id="nom" required>
 
       <label>Prénom :</label>
-      <input id="prenom" required />
+      <input type="text" id="prenom" required>
 
       <label>Téléphone :</label>
-      <input id="tel" type="tel" placeholder="+33..." required pattern="^\\+?[0-9]{8,15}$" />
+      <input type="tel" id="tel" placeholder="+336..." required pattern="^\\+?\\d{10,14}$">
 
       <label>Email :</label>
-      <input id="email" type="email" placeholder="exemple@mail.com" />
+      <input type="email" id="email" placeholder="exemple@mail.com" required>
 
       <button type="submit">Accepter le devis</button>
     </form>
 
-    <div id="status"></div>
+    <div id="message" style="margin-top:20px;text-align:center;color:green;"></div>
   </div>
 
   <script>
+    // Charger les données stockées
     const course = JSON.parse(sessionStorage.getItem("course") || "{}");
-    if (!course.depart) window.location.href = "index.html";
+    if (!course.depart) {
+      document.body.innerHTML = "<p>⚠️ Aucune donnée trouvée. Retournez à l'accueil.</p>";
+    } else {
+      document.getElementById("recap").innerHTML = `
+        <strong>Départ :</strong> ${course.depart}<br>
+        <strong>Arrivée :</strong> ${course.arrivee}<br>
+        <strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km<br>
+        <strong>Prix estimé :</strong> <span style="color:#007bff">${course.prix} €</span>
+      `;
+    }
 
-    // --- Calcul du temps estimé ---
-    // Hypothèse moyenne : 70 km/h sur route
-    const vitesseMoyenne = 70;
-    const tempsHeures = course.distanceKm / vitesseMoyenne;
-    const heures = Math.floor(tempsHeures);
-    const minutes = Math.round((tempsHeures - heures) * 60);
-    const duree = heures > 0 ? `${heures}h ${minutes} min` : `${minutes} min`;
-
-    // --- Affichage du récapitulatif ---
-    document.getElementById("recap").innerHTML = `
-      <p><strong>Départ :</strong> ${course.depart}</p>
-      <p><strong>Arrivée :</strong> ${course.arrivee}</p>
-      <p><strong>Distance :</strong> ${course.distanceKm.toFixed(1)} km</p>
-      <p><strong>Durée estimée :</strong> ${duree}</p>
-      <p><strong>Prix estimé :</strong> ${course.prix} €</p>
-    `;
-
-    // --- Validation du devis ---
-    document.getElementById("confirmForm").addEventListener("submit", async e => {
+    // Validation du formulaire
+    document.getElementById("formConfirm").addEventListener("submit", async e => {
       e.preventDefault();
       const nom = document.getElementById("nom").value.trim();
       const prenom = document.getElementById("prenom").value.trim();
       const tel = document.getElementById("tel").value.trim();
       const email = document.getElementById("email").value.trim();
 
-      if (!nom || !prenom || !tel) return alert("Merci de remplir tous les champs obligatoires.");
+      if (!nom || !prenom || !tel || !email) return alert("Tous les champs sont obligatoires.");
+
+      const messageTxt = `Bonjour ${prenom}, votre course de ${course.depart} à ${course.arrivee} (≈ ${course.distanceKm.toFixed(1)} km) pour ${course.prix}€ a été confirmée. Un chauffeur vous contactera sous peu.`;
 
       try {
-        const res = await fetch("/api/confirmation", {
+        // --- Envoi du SMS ---
+        await fetch("/api/send-sms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: tel, message: messageTxt })
+        });
+
+        // --- Envoi de l'email ---
+        await fetch("/api/send-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            to: tel, email,
-            depart: course.depart, arrivee: course.arrivee,
-            prix: course.prix, nom, prenom, duree
+            to: email,
+            subject: "Confirmation de votre course",
+            html: `<p>${messageTxt}</p>`
           })
         });
-        if (res.ok) {
-          document.getElementById("status").innerHTML = `<p class="success">✅ Devis accepté ! Un chauffeur va vous contacter.</p>`;
-          sessionStorage.clear();
-        } else throw new Error("Erreur serveur");
+
+        document.getElementById("message").textContent = "✅ Devis accepté ! Un chauffeur vous contactera bientôt.";
       } catch (err) {
-        document.getElementById("status").innerHTML = `<p class="error">❌ ${err.message}</p>`;
+        alert("Erreur d'envoi : " + err.message);
       }
     });
   </script>
